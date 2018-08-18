@@ -6,10 +6,10 @@ using namespace cloris;
 
 const char *g_redis_conf = " \
 [redis] \n\
-host=192.168.19.229 \n\
+host=127.0.0.1 \n\
 port=6379 \n\
-timeout=3000\n\
-password=weijian \n\
+timeout=1000\n\
+password=hello\n\
 ";
 
 void test_get() {
@@ -29,20 +29,20 @@ void test_get() {
     std::string value;
     {
         RedisConnectionGuard conn = manager->Get(2);
-        value = conn->Do("GET %s", "m_yueka");
+        value = conn->Do("GET %s", "m_key");
     }
-    std::cout << "m_yueka=" << value  << std::endl;
+    std::cout << "m_key=" << value << std::endl;
     std::string kval; 
     {
         RedisConnectionGuard conn1 = manager->Get(1);
         kval = conn1->Do("GET h132");
     }
     std::cout << "After do...=" << std::endl;
-    std::cout << "test_key=" << kval << std::endl;
+    std::cout << "m_key=" << kval << std::endl;
     {
         RedisConnectionGuard cons = manager->Get(2);
-        std::string val = cons->Do("GET %s", "m_yimachuangxin");
-        std::cout << "m_yimachuangxin=" << val << std::endl;
+        std::string val = cons->Do("GET %s", "m_version");
+        std::cout << "m_version=" << val << std::endl;
     }
 }
 

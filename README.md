@@ -11,13 +11,13 @@ Cloredis is a simple, flexsible, easy-to-use C++ client library for the Redis da
 * Support connection pool naturally.
 * Easier way to run Lua script.
 * High rubustness and fault-tolerance.
-* Support C++11 or upper only.
+* Support C++11 and upper only.
 
 ## Usage
 
 ``` C++
 RedisManager* manager = RedisManager::instance();
-manager->Connect("127.0.0.1", 6379, 1000, "oforedis"); 
+manager->Connect("127.0.0.1", 6379, 1000, "password"); 
 RedisConnection conn = manager->Get(2);
 std::string my_value = conn->Do("GET %s", "my_key").toString();
 bool exist = conn->Do("EXISTS %s", "my_key").toBool();

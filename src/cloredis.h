@@ -2,7 +2,7 @@
 // Copyright 2018 James Wei (weijianlhp@163.com)
 //
 // usage:
-// RedisManager manager("127.0.0.1", 6379, "oforedis"); 
+// RedisManager manager("127.0.0.1", 6379, "password"); 
 // RedisConnectionGuard conn = manager->Get(1);
 // std::string value = conn->Do("GET %s", key).toString();
 // bool exist = conn->Do("EXISTS %s", key).toBool();
