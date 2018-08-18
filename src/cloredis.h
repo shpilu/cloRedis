@@ -26,10 +26,11 @@
 
 #define ERR_NOT_INITED  "connection not inited"
 #define ERR_REENTERING  "connect reentering"
-#define ERR_NO_MEMORY   "no memory"
-#define ERR_NO_REPLY    "no reply"
+#define ERR_NO_CONTEXT  "no redisContext object"
+#define ERR_REPLY_NULL  "redisReply object is NULL"
 
 class redisContext;
+class redisReply;
 
 namespace cloris {
 
@@ -48,8 +49,35 @@ struct RedisState {
     std::string msg;
 };
 
+class RedisReply;
 class RedisManager;
 class RedisConnection;
+
+class RedisReply {
+public:
+    RedisReply(redisReply* reply, bool reclaim, const char *err_msg = NULL);
+    ~RedisReply();
+
+    std::string toString() const;
+    int32_t toInt32() const;
+    int64_t toInt64() const;
+    std::string err_str() const;
+    int type() const;
+    bool is_error() const;
+    bool is_nil() const;
+    bool is_string() const;
+    bool is_int() const;
+    bool is_array() const;
+    size_t size() const;
+
+    RedisReply operator[](size_t index);
+
+private:
+    RedisReply() = delete;
+    redisReply* reply_;
+    bool reclaim_;
+    const char *err_msg_;
+};
 
 class RedisConnectionImpl {
 public:
@@ -59,7 +87,7 @@ public:
 	RedisConnectionImpl(RedisManager*);
 	~RedisConnectionImpl();
 
-    std::string Do(const char *format, ...);
+    RedisReply Do(const char *format, ...);
     bool DoBool(const char *format, ...);
     bool Select(int db);
     bool Ok() const; 
@@ -73,6 +101,7 @@ private:
     bool ReclaimOk(int action_limit);
     void Done();
 private:
+    RedisConnectionImpl() = delete;
     RedisConnectionImpl(const RedisConnectionImpl&) = delete;
     RedisConnectionImpl& operator=(const RedisConnectionImpl&) = delete;
 	redisContext* redis_context_;
@@ -85,7 +114,7 @@ private:
 
 class RedisConnection {
 public:
-    RedisConnection() : impl_(NULL) { }
+    RedisConnection() = delete; 
     RedisConnection(RedisConnectionImpl* conn) : impl_(conn) { }
     ~RedisConnection();
 
@@ -100,10 +129,6 @@ private:
 struct ConnectionQueue {
     std::mutex queue_mtx;
     std::deque<RedisConnectionImpl*> conns;
-};
-
-class RedisReplyGuard {
-    
 };
 
 class RedisManager {

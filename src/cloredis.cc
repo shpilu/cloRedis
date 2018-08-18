@@ -21,6 +21,106 @@ static uint64_t get_current_time_ms() {
     return tval.tv_sec * 1000 + tval.tv_usec / 1000;
 }
 
+RedisReply::RedisReply(redisReply* reply, bool reclaim, const char* err_msg) 
+    : reply_(reply),
+      reclaim_(reclaim),
+      err_msg_(err_msg) {
+    cLog(TRACE, "RedisReply constructor..."); 
+}
+
+RedisReply::~RedisReply() {
+    if (reply_ && reclaim_) {
+        cLog(TRACE, "RedisReply destructor, freeReplyObject...");
+        freeReplyObject(reply_);
+    } else {
+        cLog(TRACE, "RedisReply destructor, do nothing...");
+    }
+}
+
+std::string RedisReply::toString() const {
+    std::string value("");
+    if (reply_) {
+        switch (reply_->type) {
+            case REDIS_REPLY_STRING:
+            case REDIS_REPLY_STATUS:
+            case REDIS_REPLY_ERROR:
+                value = reply_->str;
+                break;
+            default:
+                ;
+        }
+    }
+    return value;
+}
+
+int32_t RedisReply::toInt32() const {
+    int32_t value(-1);
+    if (reply_) {
+        if (reply_->type == REDIS_REPLY_INTEGER) {
+            value = reply_->integer;
+        }
+    }
+    return value;
+}
+
+int64_t RedisReply::toInt64() const {
+    int64_t value(-1);
+    if (reply_) {
+        if (reply_->type == REDIS_REPLY_INTEGER) {
+            value = reply_->integer;
+        }
+    }
+    return value;
+}
+
+bool RedisReply::is_error() const {
+    return (!reply_ || (reply_->type == REDIS_REPLY_ERROR));
+}
+
+std::string RedisReply::err_str() const {
+    std::string value("");
+    if (reply_) {
+        if (reply_->type == REDIS_REPLY_ERROR) {
+            value = reply_->str;
+        }
+    } else {
+        value = this->err_msg_;
+    }
+    return value;
+}
+
+int RedisReply::type() const {
+    if (reply_) {
+        return reply_->type;
+    } else {
+        return REDIS_REPLY_ERROR;
+    }
+}
+
+bool RedisReply::is_nil() const {
+    return (reply_ && (reply_->type == REDIS_REPLY_NIL));
+}
+
+bool RedisReply::is_string() const {
+    return (reply_ && (reply_->type == REDIS_REPLY_STRING));
+}
+
+bool RedisReply::is_int() const {
+    return (reply_ && (reply_->type == REDIS_REPLY_INTEGER));
+}
+
+bool RedisReply::is_array() const {
+    return (reply_ && (reply_->type == REDIS_REPLY_ARRAY));
+}
+
+RedisReply RedisReply::operator[](size_t index) {
+    if (!reply_ || (reply_->type != REDIS_REPLY_ARRAY) || (index > reply_->elements)) {
+        return RedisReply(NULL, false);
+    } else {
+        return RedisReply(reply_->element[index], false);
+    }
+}
+
 RedisConnectionImpl::RedisConnectionImpl(RedisManager* manager) 
     : redis_context_(NULL),
       manager_(manager),
@@ -30,8 +130,8 @@ RedisConnectionImpl::RedisConnectionImpl(RedisManager* manager)
 }
 
 RedisConnectionImpl::~RedisConnectionImpl() {
-    Close();
-}
+    Close(); 
+} 
 
 void RedisConnectionImpl::Close() {
     if (redis_context_) {
@@ -92,7 +192,7 @@ bool RedisConnectionImpl::Connect(const std::string& host, int port, struct time
     }
     redis_context_ = redisConnectWithTimeout(host.c_str(), port, timeout);
     if (!redis_context_) {
-        this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_NO_MEMORY);
+        this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_NO_CONTEXT);
         cLog(ERROR, "No memory in creating new request");
         return false;
     }
@@ -108,12 +208,12 @@ bool RedisConnectionImpl::Connect(const std::string& host, int port, struct time
     return this->Ok();
 }
 
-std::string RedisConnectionImpl::Do(const char *format, ...) {
+RedisReply RedisConnectionImpl::Do(const char *format, ...) {
     ++this->action_count_;
     std::string value("");
     if (!redis_context_) {
         this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_NOT_INITED);
-        return value;
+        return RedisReply(NULL, false, ERR_NO_CONTEXT);
     }
 
     va_list ap;
@@ -123,24 +223,15 @@ std::string RedisConnectionImpl::Do(const char *format, ...) {
 
     if (redis_context_->err) {
         this->UpdateProcessState(STATE_ERROR_HIREDIS, redis_context_->errstr);
-        return value;
+        return RedisReply(NULL, false, redis_context_->errstr);
     }
 
     if (reply != NULL) {
-        if (reply->type == REDIS_REPLY_STRING) {
-            value = reply->str;
-            this->UpdateProcessState(STATE_OK, "");
-        } else if (reply->type == REDIS_REPLY_ERROR) {
-            this->UpdateProcessState(STATE_ERROR_COMMAND, reply->str);
-        } else {
-            this->UpdateProcessState(STATE_OK, "");
-        }
-        freeReplyObject(reply);
+        this->UpdateProcessState(STATE_OK, "");
+        return RedisReply(reply, true);
     } else {
-        this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_NO_REPLY);
+        return RedisReply(NULL, false, ERR_REPLY_NULL);
     }
-
-    return value;
 }
 
 bool RedisConnectionImpl::Select(int db) {
@@ -243,7 +334,7 @@ RedisConnectionImpl* RedisManager::Get(int db) {
     if (!conn) {
     }
 
-    // new一个
+    // create new one
     if (!conn) {
         cLog(INFO, "Get connection by creating new one, slot=%d", db);
         conn = new RedisConnectionImpl(this);

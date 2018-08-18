@@ -3,8 +3,11 @@
 # Copyright (c) 2018 James Wei (weijianlhp@163.com). All rights reserved.
 #
 
-# NOTE: cloredis will install in /usr/local/ directory by default, 
-# you can change it by run "make PREFIX=$(YOUR_DIR)"
+# NOTE: 
+# * Cloredis will install in /usr/local/ directory by default
+# * You can change installation directory by run 'make PREFIX=$(YOUR_DIR)'
+# * For cloredis internal test, use 'make DDEFINE=-DUSE_DEBUG'
+#
 PREFIX?=/usr/local
 INCLUDE_PATH?=include/cloredis
 LIB_PATH?=lib

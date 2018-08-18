@@ -25,23 +25,35 @@ void test_get() {
         std::cout << "[ERROR] redis init error, msg=xx" << std::endl;
         return;
     }
+    std::cout << "test begin=" << std::endl;
 
     std::string value;
     {
         RedisConnection conn = manager->Get(2);
-        value = conn->Do("GET %s", "m_key");
+        std::cout << "test begin=#" << std::endl;
+        conn->Do("SET m_key %s", "This is just a test");
+        std::cout << "test begin=##" << std::endl;
+        value = conn->Do("GET %s", "m_key").toString();
+        std::cout << "test begin=###" << std::endl;
+        std::cout << "m_key=" << value << std::endl;
     }
-    std::cout << "m_key=" << value << std::endl;
-    std::string kval; 
+
     {
         RedisConnection conn1 = manager->Get(1);
-        kval = conn1->Do("GET h132");
+        std::string ret = conn1->Do("SET m_kval %s").toString();
+        std::cout << "SET m_kval=" << ret << std::endl;
+        
+        conn1->Do("DEL m_kval");
+        RedisReply reply = conn1->Do("GET m_val");
+        std::cout << "after del, m_kval=" << reply.toString() << std::endl;
+        if (reply.is_nil()) {
+            std::cout << "after deleting, m_kval is nil" << std::endl;
+        }
     }
-    std::cout << "After do...=" << std::endl;
-    std::cout << "m_key=" << kval << std::endl;
+
     {
         RedisConnection cons = manager->Get(2);
-        std::string val = cons->Do("GET %s", "m_version");
+        std::string val = cons->Do("GET %s", "m_version").toString();
         std::cout << "m_version=" << val << std::endl;
     }
 }
