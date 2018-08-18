@@ -21,7 +21,7 @@ static uint64_t get_current_time_ms() {
     return tval.tv_sec * 1000 + tval.tv_usec / 1000;
 }
 
-RedisConnection::RedisConnection(RedisManager* manager) 
+RedisConnectionImpl::RedisConnectionImpl(RedisManager* manager) 
     : redis_context_(NULL),
       manager_(manager),
       access_time_(get_current_time_ms()),
@@ -29,22 +29,22 @@ RedisConnection::RedisConnection(RedisManager* manager)
       db_(0) {
 }
 
-RedisConnection::~RedisConnection() {
+RedisConnectionImpl::~RedisConnectionImpl() {
     Close();
 }
 
-void RedisConnection::Close() {
+void RedisConnectionImpl::Close() {
     if (redis_context_) {
         redisFree(redis_context_);
         redis_context_ = NULL;
     }
 }
 
-bool RedisConnection::Ok() const {
+bool RedisConnectionImpl::Ok() const {
     return (state_.es == STATE_OK);
 }
 
-bool RedisConnection::ReclaimOk(int action_limit) {
+bool RedisConnectionImpl::ReclaimOk(int action_limit) {
     if (state_.es != STATE_OK) {
         cLog(DEBUG, "Connection reclaim failed as state not OK");
         return false;
@@ -60,31 +60,31 @@ bool RedisConnection::ReclaimOk(int action_limit) {
     return true;
 }
 
-ERR_STATE RedisConnection::ErrorCode() const {
+ERR_STATE RedisConnectionImpl::ErrorCode() const {
     return state_.es;
 }
 
-const std::string& RedisConnection::ErrorString() const {
+const std::string& RedisConnectionImpl::ErrorString() const {
     return state_.msg;
 }
 
-void RedisConnection::Done() {
+void RedisConnectionImpl::Done() {
     cLog(DEBUG, "Reclaim connection, id=%d", this->db_);
     access_time_ = get_current_time_ms();
     if (manager_) {
         manager_->Gc(this);
     } else {
-        cLog(ERROR, "RedisConnection manager do not exist");
+        cLog(ERROR, "RedisConnectionImpl manager do not exist");
     }
     return;
 }
 
-void RedisConnection::UpdateProcessState(ERR_STATE state, const std::string& msg) {
+void RedisConnectionImpl::UpdateProcessState(ERR_STATE state, const std::string& msg) {
     state_.es = state;
     state_.msg = msg;
 }
 
-bool RedisConnection::Connect(const std::string& host, int port, struct timeval &timeout, const std::string& password) {
+bool RedisConnectionImpl::Connect(const std::string& host, int port, struct timeval &timeout, const std::string& password) {
     if (redis_context_) {
         this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_REENTERING);
         cLog(ERROR, "internal implementation bug, redis_context is not NULL in 'Connect'");
@@ -108,7 +108,7 @@ bool RedisConnection::Connect(const std::string& host, int port, struct timeval 
     return this->Ok();
 }
 
-std::string RedisConnection::Do(const char *format, ...) {
+std::string RedisConnectionImpl::Do(const char *format, ...) {
     ++this->action_count_;
     std::string value("");
     if (!redis_context_) {
@@ -143,7 +143,7 @@ std::string RedisConnection::Do(const char *format, ...) {
     return value;
 }
 
-bool RedisConnection::Select(int db) {
+bool RedisConnectionImpl::Select(int db) {
     ++this->action_count_;
     this->Do("SELECT %d", db);
     bool ok = this->Ok();
@@ -153,26 +153,26 @@ bool RedisConnection::Select(int db) {
     return ok;
 }
 
-RedisConnectionGuard::~RedisConnectionGuard() {
-    cLog(DEBUG, "RedisConnectionGuard destructor...");
-    if (connection_)  {
-        connection_->Done();
+RedisConnection::~RedisConnection() {
+    cLog(DEBUG, "RedisConnection destructor...");
+    if (impl_)  {
+        impl_->Done();
     }
 }
 
-RedisConnection* RedisConnectionGuard::operator->() {
-    return this->connection_;
+RedisConnectionImpl* RedisConnection::operator->() {
+    return this->impl_;
 }
 
-RedisConnection& RedisConnectionGuard::operator*() {
-    return *(this->connection_);
+RedisConnectionImpl& RedisConnection::operator*() {
+    return *(this->impl_);
 }
 
-RedisConnectionGuard& RedisConnectionGuard::operator=(RedisConnection* connection) {
-    if (this->connection_) {
-        this->connection_->Done();
+RedisConnection& RedisConnection::operator=(RedisConnectionImpl* connection) {
+    if (this->impl_) {
+        this->impl_->Done();
     }
-    this->connection_ = connection;
+    this->impl_ = connection;
     return *this;
 }
 
@@ -210,7 +210,7 @@ bool RedisManager::Connect(const std::string& host, int port, int timeout_ms, co
     timeout_ = { timeout_ms / 1000, (timeout_ms % 1000) * 1000 };
     password_ = password;
     
-    RedisConnection *connection = new RedisConnection(this);
+    RedisConnectionImpl *connection = new RedisConnectionImpl(this);
     if (connection->Connect(host_, port, timeout_, password_)) {
         this->Gc(connection);
         return true;
@@ -219,14 +219,14 @@ bool RedisManager::Connect(const std::string& host, int port, int timeout_ms, co
     }
 }
 
-RedisConnection* RedisManager::Get(int db) {
-    RedisConnection* conn = NULL;
+RedisConnectionImpl* RedisManager::Get(int db) {
+    RedisConnectionImpl* conn = NULL;
     ConnectionQueue* cqueue = &queue_[db];
     if (cqueue->conns.size() > 0) {
         uint64_t now = get_current_time_ms();
         std::lock_guard<std::mutex> lock(cqueue->queue_mtx);
         if (cqueue->conns.size() > 0) {
-            RedisConnection* tmp_conn = cqueue->conns.front();
+            RedisConnectionImpl* tmp_conn = cqueue->conns.front();
             if (now - tmp_conn->access_time_ > this->time_limit_) {
                 cqueue->conns.pop_front();
                 cLog(DEBUG, "delete connection as time_limit exceed, slot=%d", db);
@@ -246,14 +246,14 @@ RedisConnection* RedisManager::Get(int db) {
     // new一个
     if (!conn) {
         cLog(INFO, "Get connection by creating new one, slot=%d", db);
-        conn = new RedisConnection(this);
+        conn = new RedisConnectionImpl(this);
         conn->Connect(host_, port_, timeout_, password_);
         conn->Select(db);
     }
     return conn;
 }
 
-void RedisManager::Gc(RedisConnection* connection) {
+void RedisManager::Gc(RedisConnectionImpl* connection) {
     if (!connection) {
         return;
     }

@@ -2,14 +2,15 @@
 // Copyright 2018 James Wei (weijianlhp@163.com)
 //
 // usage:
-// RedisManager manager("127.0.0.1", 6379, "password"); 
-// RedisConnectionGuard conn = manager->Get(1);
+// RedisManager manager = RedisManager::instance(); //
+// manager->Connect("127.0.0.1", 6379, "password"); 
+// RedisConnection conn = manager->Get(1);
 // std::string value = conn->Do("GET %s", key).toString();
 // bool exist = conn->Do("EXISTS %s", key).toBool();
-// connection->Select(3);
-// connection->Do("SET %s %d", "my_key", 8);
+// conn->Select(3);
+// conn->Do("SET %s %d", "my_key", 8);
 // ...
-// (connection releasing is not necessary, RedisConnectionGuard class will do it automatically in its destructor function)
+// (connection releasing is not necessary, RedisConnection class will do it automatically in its destructor function)
 //
 
 #ifndef CLORIS_REDIS_H_
@@ -48,15 +49,15 @@ struct RedisState {
 };
 
 class RedisManager;
-class RedisConnectionGuard;
+class RedisConnection;
 
-class RedisConnection {
+class RedisConnectionImpl {
 public:
     friend class RedisManager; 
-    friend class RedisConnectionGuard;
+    friend class RedisConnection;
 public:
-	RedisConnection(RedisManager*);
-	~RedisConnection();
+	RedisConnectionImpl(RedisManager*);
+	~RedisConnectionImpl();
 
     std::string Do(const char *format, ...);
     bool DoBool(const char *format, ...);
@@ -72,8 +73,8 @@ private:
     bool ReclaimOk(int action_limit);
     void Done();
 private:
-    RedisConnection(const RedisConnection&) = delete;
-    RedisConnection& operator=(const RedisConnection&) = delete;
+    RedisConnectionImpl(const RedisConnectionImpl&) = delete;
+    RedisConnectionImpl& operator=(const RedisConnectionImpl&) = delete;
 	redisContext* redis_context_;
     RedisManager* manager_;
     RedisState state_;
@@ -82,23 +83,23 @@ private:
     int db_;
 };
 
-class RedisConnectionGuard {
+class RedisConnection {
 public:
-    RedisConnectionGuard() : connection_(NULL) { }
-    RedisConnectionGuard(RedisConnection* conn) : connection_(conn) { }
-    ~RedisConnectionGuard();
+    RedisConnection() : impl_(NULL) { }
+    RedisConnection(RedisConnectionImpl* conn) : impl_(conn) { }
+    ~RedisConnection();
 
-    RedisConnection* operator->();
-    RedisConnection& operator*();
-    RedisConnectionGuard& operator=(RedisConnection* connection);
+    RedisConnectionImpl* operator->();
+    RedisConnectionImpl& operator*();
+    RedisConnection& operator=(RedisConnectionImpl* connection);
 
 private:
-    RedisConnection* connection_;
+    RedisConnectionImpl* impl_;
 };
 
 struct ConnectionQueue {
     std::mutex queue_mtx;
-    std::deque<RedisConnection*> conns;
+    std::deque<RedisConnectionImpl*> conns;
 };
 
 class RedisReplyGuard {
@@ -114,11 +115,11 @@ public:
     RedisManager(const std::string& host, int port, int timeout_ms, const std::string& password = "");
     bool Connect(const std::string& host, int port, int timeout_ms, const std::string& password = ""); 
 
-    RedisConnection* Get(int db);
+    RedisConnectionImpl* Get(int db);
     static RedisManager* instance();
 private:
-    friend class RedisConnection;
-    void Gc(RedisConnection* connection);
+    friend class RedisConnectionImpl;
+    void Gc(RedisConnectionImpl* connection);
 
     ConnectionQueue queue_[SLOT_NUM];
     std::string host_;
