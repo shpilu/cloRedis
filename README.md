@@ -11,7 +11,7 @@ Cloredis is a simple, flexsible, easy-to-use C++ client library for the Redis da
 * Support connection pool naturally.
 * Easier way to run Lua script.
 * High rubustness and fault-tolerance.
-* Support C++ language only.
+* Support C++11 or upper only.
 
 ## Usage
 
@@ -38,4 +38,4 @@ Comming soon.
 
 ## Authors
 
-* James Wei(weijianlhp@163.com)
+* James Wei (weijianlhp@163.com)
