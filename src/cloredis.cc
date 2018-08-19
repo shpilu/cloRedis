@@ -21,20 +21,40 @@ static uint64_t get_current_time_ms() {
     return tval.tv_sec * 1000 + tval.tv_usec / 1000;
 }
 
-RedisReply::RedisReply(redisReply* reply, bool reclaim, const char* err_msg) 
+RedisReply::RedisReply(redisReply* reply, bool reclaim, ERR_STATE state, const char* err_msg, bool copy_errstr)
     : reply_(reply),
-      reclaim_(reclaim),
-      err_msg_(err_msg) {
+      err_state_(state),
+      reclaim_(reclaim) {
+    UpdateErrMsg(err_msg, copy_errstr);
     cLog(TRACE, "RedisReply constructor..."); 
 }
 
 RedisReply::~RedisReply() {
-    if (reply_ && reclaim_) {
-        cLog(TRACE, "RedisReply destructor, freeReplyObject...");
+    cLog(TRACE, "RedisReply destructor..."); 
+    if (reclaim_ && reply_) {
         freeReplyObject(reply_);
-    } else {
-        cLog(TRACE, "RedisReply destructor, do nothing...");
     }
+}
+
+void RedisReply::UpdateErrMsg(const char* err_msg, bool copy_errstr) {
+    if (copy_errstr) {
+        size_t len = strlen(err_msg);
+        len = (len < sizeof(err_str_)) ? len : (sizeof(err_str_) - 1);
+        memcpy(err_str_, err_msg, len);
+        err_msg_ = err_str_;
+    } else {
+        err_msg_ = err_msg;
+    }
+}
+
+void RedisReply::Update(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg, bool copy_errstr) {
+    if (reply_) {
+        freeReplyObject(reply_);
+    }
+    reply_ = rep;
+    err_state_ = state;
+    reclaim_ = reclaim;
+    UpdateErrMsg(err_msg, copy_errstr);
 }
 
 std::string RedisReply::toString() const {
@@ -73,8 +93,13 @@ int64_t RedisReply::toInt64() const {
     return value;
 }
 
-bool RedisReply::is_error() const {
+
+bool RedisReply::error() const {  
     return (!reply_ || (reply_->type == REDIS_REPLY_ERROR));
+}
+
+bool RedisReply::ok() const {  
+    return (reply_ && (reply_->type != REDIS_REPLY_ERROR)); 
 }
 
 std::string RedisReply::err_str() const {
@@ -113,12 +138,78 @@ bool RedisReply::is_array() const {
     return (reply_ && (reply_->type == REDIS_REPLY_ARRAY));
 }
 
-RedisReply RedisReply::operator[](size_t index) {
-    if (!reply_ || (reply_->type != REDIS_REPLY_ARRAY) || (index > reply_->elements)) {
-        return RedisReply(NULL, false);
+size_t RedisReply::size() const {
+    if (reply_ && (reply_->type == REDIS_REPLY_ARRAY)) {
+        return reply_->elements;
     } else {
-        return RedisReply(reply_->element[index], false);
+        return 0;
     }
+}
+
+RedisReplyPtr RedisReply::operator[](size_t index) {
+    RedisReplyPtr reply;
+    if (!reply_ || (reply_->type != REDIS_REPLY_ARRAY) || (index > reply_->elements)) {
+        cLog(ERROR, "warning, reply type is not array");
+    } else {
+        reply.reset(new RedisReply(reply_->element[index], false, STATE_OK, "", false));
+    }
+    return reply;
+}
+
+
+ERR_STATE RedisConnectionImpl::err_state() const {
+    return this->reply_ptr_->err_state();
+}
+
+bool RedisConnectionImpl::error() const {
+    return this->reply_ptr_->error();
+}
+
+bool RedisConnectionImpl::ok() const {
+    return this->reply_ptr_->ok();
+}
+    
+std::string RedisConnectionImpl::toString() const {
+    return this->reply_ptr_->toString();
+}
+
+int32_t RedisConnectionImpl::toInt32() const {
+    return this->reply_ptr_->toInt32();
+}
+
+int64_t RedisConnectionImpl::toInt64() const {
+    return this->reply_ptr_->toInt64();
+}
+
+std::string RedisConnectionImpl::err_str() const {
+    return this->reply_ptr_->err_str();
+}
+
+int RedisConnectionImpl::type() const {
+    return this->reply_ptr_->type();
+}
+
+bool RedisConnectionImpl::is_nil() const {
+    return this->reply_ptr_->is_nil();
+}
+
+bool RedisConnectionImpl::is_string() const {
+    return this->reply_ptr_->is_string();
+}
+bool RedisConnectionImpl::is_int() const {
+    return this->reply_ptr_->is_int();
+}
+
+bool RedisConnectionImpl::is_array() const {
+    return this->reply_ptr_->is_array();
+}
+
+size_t RedisConnectionImpl::size() const {
+    return this->reply_ptr_->size();
+}
+
+RedisReplyPtr RedisConnectionImpl::Reply() {
+    return this->reply_ptr_;
 }
 
 RedisConnectionImpl::RedisConnectionImpl(RedisManager* manager) 
@@ -140,12 +231,8 @@ void RedisConnectionImpl::Close() {
     }
 }
 
-bool RedisConnectionImpl::Ok() const {
-    return (state_.es == STATE_OK);
-}
-
 bool RedisConnectionImpl::ReclaimOk(int action_limit) {
-    if (state_.es != STATE_OK) {
+    if (reply_ptr_->err_state() != STATE_OK) {
         cLog(DEBUG, "Connection reclaim failed as state not OK");
         return false;
     }
@@ -160,16 +247,9 @@ bool RedisConnectionImpl::ReclaimOk(int action_limit) {
     return true;
 }
 
-ERR_STATE RedisConnectionImpl::ErrorCode() const {
-    return state_.es;
-}
-
-const std::string& RedisConnectionImpl::ErrorString() const {
-    return state_.msg;
-}
-
 void RedisConnectionImpl::Done() {
     cLog(DEBUG, "Reclaim connection, id=%d", this->db_);
+    reply_ptr_.reset(new RedisReply(NULL, true, STATE_OK, "", false));
     access_time_ = get_current_time_ms();
     if (manager_) {
         manager_->Gc(this);
@@ -179,41 +259,45 @@ void RedisConnectionImpl::Done() {
     return;
 }
 
-void RedisConnectionImpl::UpdateProcessState(ERR_STATE state, const std::string& msg) {
-    state_.es = state;
-    state_.msg = msg;
+void RedisConnectionImpl::UpdateProcessState(redisReply* reply, bool reclaim, ERR_STATE state, const char* err_msg, bool copy_errstr) {
+    cLog(DEBUG, "reply_ptr use_count=%d", reply_ptr_.use_count());
+    if (reply_ptr_.use_count() == 1) {
+        reply_ptr_->Update(reply, reclaim, state, err_msg, copy_errstr);
+    } else {
+        reply_ptr_.reset(new RedisReply(reply, reclaim, state, err_msg, copy_errstr));
+    }
 }
 
 bool RedisConnectionImpl::Connect(const std::string& host, int port, struct timeval &timeout, const std::string& password) {
     if (redis_context_) {
-        this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_REENTERING);
+        this->UpdateProcessState(NULL, true, STATE_ERROR_INVOKE, ERR_REENTERING);
         cLog(ERROR, "internal implementation bug, redis_context is not NULL in 'Connect'");
         return false;
     }
     redis_context_ = redisConnectWithTimeout(host.c_str(), port, timeout);
     if (!redis_context_) {
-        this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_NO_CONTEXT);
+        this->UpdateProcessState(NULL, true, STATE_ERROR_INVOKE, ERR_NO_CONTEXT);
         cLog(ERROR, "No memory in creating new request");
         return false;
     }
     if (redis_context_->err) {
-        this->UpdateProcessState(STATE_ERROR_HIREDIS, redis_context_->errstr);
+        this->UpdateProcessState(NULL, true, STATE_ERROR_HIREDIS, redis_context_->errstr, true);
         return false;
     }
     if (password.size() == 0) {
-        this->UpdateProcessState(STATE_OK, "");
+        this->UpdateProcessState(NULL, true, STATE_OK, "");
         return true;
     }
     this->Do("AUTH %s", password.c_str());
-    return this->Ok();
+    return this->reply_ptr_->ok();
 }
 
-RedisReply RedisConnectionImpl::Do(const char *format, ...) {
+RedisConnectionImpl& RedisConnectionImpl::Do(const char *format, ...) {
     ++this->action_count_;
     std::string value("");
     if (!redis_context_) {
-        this->UpdateProcessState(STATE_ERROR_INVOKE, ERR_NOT_INITED);
-        return RedisReply(NULL, false, ERR_NO_CONTEXT);
+        this->UpdateProcessState(NULL, true, STATE_ERROR_INVOKE, ERR_NO_CONTEXT);
+        return *this; 
     }
 
     va_list ap;
@@ -222,22 +306,22 @@ RedisReply RedisConnectionImpl::Do(const char *format, ...) {
     va_end(ap);
 
     if (redis_context_->err) {
-        this->UpdateProcessState(STATE_ERROR_HIREDIS, redis_context_->errstr);
-        return RedisReply(NULL, false, redis_context_->errstr);
+        this->UpdateProcessState(NULL, true, STATE_ERROR_HIREDIS, redis_context_->errstr, true);
+        return *this; 
     }
 
     if (reply != NULL) {
-        this->UpdateProcessState(STATE_OK, "");
-        return RedisReply(reply, true);
+        this->UpdateProcessState(reply, true, STATE_OK, "");
     } else {
-        return RedisReply(NULL, false, ERR_REPLY_NULL);
+        this->UpdateProcessState(NULL, true, STATE_ERROR_INVOKE, ERR_REPLY_NULL);
     }
+    return *this;
 }
 
 bool RedisConnectionImpl::Select(int db) {
     ++this->action_count_;
     this->Do("SELECT %d", db);
-    bool ok = this->Ok();
+    bool ok = this->reply_ptr_->ok();
     if (ok) {
         this->db_ = db;
     }
@@ -279,6 +363,16 @@ RedisManager::RedisManager()
 
 RedisManager::~RedisManager() {
     cLog(TRACE, "RedisManager ~ destructor ");
+    
+    RedisConnectionImpl* tmp_conn;
+    for (int i = 0; i < SLOT_NUM; ++i) {
+        ConnectionQueue* cqueue = &queue_[i];
+        while (!cqueue->conns.empty()) {
+            tmp_conn = cqueue->conns.front();
+            cqueue->conns.pop_front();
+            delete tmp_conn;
+        }
+    }
 }
 
 RedisManager* RedisManager::instance() {
@@ -301,13 +395,16 @@ bool RedisManager::Connect(const std::string& host, int port, int timeout_ms, co
     timeout_ = { timeout_ms / 1000, (timeout_ms % 1000) * 1000 };
     password_ = password;
     
+    bool result;
     RedisConnectionImpl *connection = new RedisConnectionImpl(this);
     if (connection->Connect(host_, port, timeout_, password_)) {
-        this->Gc(connection);
-        return true;
+        result = true;
     } else {
-        return false;
+        result = false;
     }
+    connection->Done();
+
+    return result;
 }
 
 RedisConnectionImpl* RedisManager::Get(int db) {

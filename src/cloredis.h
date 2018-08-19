@@ -17,12 +17,15 @@
 #define CLORIS_REDIS_H_
 
 #include <string>
+#include <memory>
 #include <mutex>
 #include <deque>
 
 #define CLOREDIS_SONAME libcloredis
 #define CLOREDIS_MAJOR 0
 #define CLOREDIS_MINOR 1
+
+#define REDIS_ERRSTR_LEN 256
 
 #define ERR_NOT_INITED  "connection not inited"
 #define ERR_REENTERING  "connect reentering"
@@ -42,41 +45,42 @@ enum ERR_STATE {
     STATE_ERROR_INVOKE = 4,
 };
 
-struct RedisState {
-    RedisState() : es(STATE_OK), msg("") { }
-
-    ERR_STATE es;
-    std::string msg;
-};
-
 class RedisReply;
 class RedisManager;
 class RedisConnection;
 
+typedef std::shared_ptr<RedisReply> RedisReplyPtr;
+
 class RedisReply {
 public:
-    RedisReply(redisReply* reply, bool reclaim, const char *err_msg = NULL);
+    RedisReply(redisReply* reply, bool reclaim, ERR_STATE state, const char* err_msg, bool copy_errstr);
     ~RedisReply();
 
+    void Update(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg, bool copy_errstr); 
+
+    ERR_STATE err_state() const { return err_state_; }
+    bool error() const; 
+    bool ok() const;
     std::string toString() const;
     int32_t toInt32() const;
     int64_t toInt64() const;
     std::string err_str() const;
     int type() const;
-    bool is_error() const;
     bool is_nil() const;
     bool is_string() const;
     bool is_int() const;
     bool is_array() const;
     size_t size() const;
 
-    RedisReply operator[](size_t index);
-
+    RedisReplyPtr operator[](size_t index);
 private:
+    void UpdateErrMsg(const char* err_msg, bool copy_errstr); 
     RedisReply() = delete;
+    char err_str_[REDIS_ERRSTR_LEN]; //
     redisReply* reply_;
-    bool reclaim_;
     const char *err_msg_;
+    ERR_STATE err_state_;
+    bool reclaim_;
 };
 
 class RedisConnectionImpl {
@@ -87,17 +91,31 @@ public:
 	RedisConnectionImpl(RedisManager*);
 	~RedisConnectionImpl();
 
-    RedisReply Do(const char *format, ...);
+    RedisConnectionImpl& Do(const char *format, ...);
     bool DoBool(const char *format, ...);
     bool Select(int db);
-    bool Ok() const; 
-    ERR_STATE ErrorCode() const; 
-    const std::string& ErrorString() const;
 	void Close();
     int db() const { return db_; }
+
+    // 
+    ERR_STATE err_state() const; 
+    bool error() const; 
+    bool ok() const;
+    std::string toString() const;
+    int32_t toInt32() const;
+    int64_t toInt64() const;
+    std::string err_str() const;
+    int type() const;
+    bool is_nil() const;
+    bool is_string() const;
+    bool is_int() const;
+    bool is_array() const;
+    size_t size() const;
+
+    RedisReplyPtr Reply();
 private:
     bool Connect(const std::string& host, int port , struct timeval &timeout, const std::string& password);
-    void UpdateProcessState(ERR_STATE state, const std::string& msg);
+    void UpdateProcessState(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg, bool copy_errstr = false); 
     bool ReclaimOk(int action_limit);
     void Done();
 private:
@@ -106,7 +124,7 @@ private:
     RedisConnectionImpl& operator=(const RedisConnectionImpl&) = delete;
 	redisContext* redis_context_;
     RedisManager* manager_;
-    RedisState state_;
+    RedisReplyPtr reply_ptr_;
     uint64_t access_time_;
     int action_count_;
     int db_;

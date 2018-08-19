@@ -40,13 +40,13 @@ void test_get() {
 
     {
         RedisConnection conn1 = manager->Get(1);
-        std::string ret = conn1->Do("SET m_kval %s").toString();
+        std::string ret = conn1->Do("SET m_kval %s", "test_val").toString();
         std::cout << "SET m_kval=" << ret << std::endl;
         
         conn1->Do("DEL m_kval");
-        RedisReply reply = conn1->Do("GET m_val");
-        std::cout << "after del, m_kval=" << reply.toString() << std::endl;
-        if (reply.is_nil()) {
+        RedisReplyPtr reply = conn1->Do("GET m_val").Reply();
+        std::cout << "after del, m_kval=" << reply->toString() << std::endl;
+        if (reply->is_nil()) {
             std::cout << "after deleting, m_kval is nil" << std::endl;
         }
     }

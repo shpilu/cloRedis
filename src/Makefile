@@ -6,7 +6,7 @@
 # NOTE: 
 # * Cloredis will install in /usr/local/ directory by default
 # * You can change installation directory by run 'make PREFIX=$(YOUR_DIR)'
-# * For cloredis internal test, use 'make DDEFINE=-DUSE_DEBUG'
+# * For cloredis internal test, use 'make DEFINE=-DUSE_DEBUG'
 #
 PREFIX?=/usr/local
 INCLUDE_PATH?=include/cloredis
@@ -26,7 +26,7 @@ STLIBSUFFIX=a
 
 # gcc parameters 
 OPTIMIZATION?=-O2
-DDEFINE?= #-DUSE_DEBUG 
+DEFINE?= #-DUSE_DEBUG 
 DEBUG_FLAGS?= # -g -ggdb 
 WARNINGS=-Wall -W -Wwrite-strings
 CXXFLAGS=-std=c++11 -fPIC -fno-omit-frame-pointer
@@ -34,7 +34,7 @@ LDFLAGS+=-L../lib # xxx
 LDYNAMICS+=-lpthread -lcconf -lhiredis
 INCLUDES=-I. -I./include -I/usr/local/include/hiredis
 
-STD_FLAGS=$(CXXFLAGS) $(DDEFINE) $(OPTIMIZATION) $(DEBUG_FLAGS) $(WARNINGS)
+STD_FLAGS=$(CXXFLAGS) $(DEFINE) $(OPTIMIZATION) $(DEBUG_FLAGS) $(WARNINGS)
 
 INSTALL_INCLUDE_PATH=$(PREFIX)/$(INCLUDE_PATH)
 INSTALL_LIB_PATH=$(PREFIX)/$(LIB_PATH)
