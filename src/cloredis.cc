@@ -1,3 +1,4 @@
+//
 // Cloredis core implementation
 // Copyright (c) 2018 James Wei (weijianlhp@163.com). All rights reserved.
 //
@@ -248,7 +249,7 @@ bool RedisConnectionImpl::ReclaimOk(int action_limit) {
 }
 
 void RedisConnectionImpl::Done() {
-    cLog(DEBUG, "Reclaim connection, id=%d", this->db_);
+    cLog(DEBUG, "Reclaim connection, id=%d, reset.use_count=%d", this->db_, reply_ptr_.use_count());
     reply_ptr_.reset(new RedisReply(NULL, true, STATE_OK, "", false));
     access_time_ = get_current_time_ms();
     if (manager_) {
@@ -362,8 +363,7 @@ RedisManager::RedisManager()
 }
 
 RedisManager::~RedisManager() {
-    cLog(TRACE, "RedisManager ~ destructor ");
-    
+    cLog(TRACE, "RedisManager ~ destructor begin...");
     RedisConnectionImpl* tmp_conn;
     for (int i = 0; i < SLOT_NUM; ++i) {
         ConnectionQueue* cqueue = &queue_[i];
@@ -373,6 +373,7 @@ RedisManager::~RedisManager() {
             delete tmp_conn;
         }
     }
+    cLog(TRACE, "RedisManager ~ destructor end...");
 }
 
 RedisManager* RedisManager::instance() {

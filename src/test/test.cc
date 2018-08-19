@@ -37,18 +37,21 @@ void test_get() {
         std::cout << "test begin=###" << std::endl;
         std::cout << "m_key=" << value << std::endl;
     }
-
     {
-        RedisConnection conn1 = manager->Get(1);
-        std::string ret = conn1->Do("SET m_kval %s", "test_val").toString();
-        std::cout << "SET m_kval=" << ret << std::endl;
-        
-        conn1->Do("DEL m_kval");
-        RedisReplyPtr reply = conn1->Do("GET m_val").Reply();
-        std::cout << "after del, m_kval=" << reply->toString() << std::endl;
-        if (reply->is_nil()) {
-            std::cout << "after deleting, m_kval is nil" << std::endl;
+        RedisReplyPtr reply;
+        {
+            RedisConnection conn1 = manager->Get(1);
+            std::string ret = conn1->Do("SET m_kval %s", "test_val").toString();
+            std::cout << "SET m_kval=" << ret << std::endl;
+            
+            conn1->Do("DEL m_kval");
+            reply = conn1->Do("GET m_val").Reply();
+            std::cout << "after del, m_kval=" << reply->toString() << std::endl;
+            if (reply->is_nil()) {
+                std::cout << "after deleting, m_kval is nil" << std::endl;
+            }
         }
+        std::cout << "test_redis_reply##=" << reply->toString() << std::endl;
     }
 
     {
