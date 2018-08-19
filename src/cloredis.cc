@@ -3,7 +3,7 @@
 // Copyright (c) 2018 James Wei (weijianlhp@163.com). All rights reserved.
 //
 // ChangeLog:
-// 2018-01-20  Created
+// 2018-04-20  Created
 
 #include <boost/algorithm/string.hpp>
 #include <sstream>
@@ -428,11 +428,10 @@ RedisConnectionImpl* RedisManager::Get(int db) {
         }
     }
     
-    // TODO get_connection from one slot with most count 
+    // TODO get_connection from one slot with most amount 
     if (!conn) {
     }
 
-    // create new one
     if (!conn) {
         cLog(INFO, "Get connection by creating new one, slot=%d", db);
         conn = new RedisConnectionImpl(this);

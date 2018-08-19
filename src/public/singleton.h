@@ -1,6 +1,5 @@
 // 
 // implementaton of singleton pattern
-// Version:1.0
 // Copyright 2017 James Wei (weijianlhp@163.com)
 //
 

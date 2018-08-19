@@ -1,16 +1,15 @@
-// Cloredis, a simple, flexsible, easy-to-use C++ client library for the Redis database based on hiredis
+// Cloredis is a simple, flexsible, easy-to-use C++ client library for the Redis database
 // Copyright 2018 James Wei (weijianlhp@163.com)
 //
 // usage:
-// RedisManager manager = RedisManager::instance(); //
+// RedisManager manager = RedisManager::instance();
 // manager->Connect("127.0.0.1", 6379, "password"); 
 // RedisConnection conn = manager->Get(1);
 // std::string value = conn->Do("GET %s", key).toString();
 // bool exist = conn->Do("EXISTS %s", key).toBool();
 // conn->Select(3);
 // conn->Do("SET %s %d", "my_key", 8);
-// ...
-// (connection releasing is not necessary, RedisConnection class will do it automatically in its destructor function)
+// *(connection releasing is not necessary, RedisConnection class will do it automatically in its destructor function)
 //
 
 #ifndef CLORIS_REDIS_H_
@@ -26,6 +25,7 @@
 #define CLOREDIS_MINOR 1
 
 #define REDIS_ERRSTR_LEN 256
+#define SLOT_NUM 16  //support redis db 0-15 by default
 
 #define ERR_NOT_INITED  "connection not inited"
 #define ERR_REENTERING  "connect reentering"
@@ -97,7 +97,6 @@ public:
 	void Close();
     int db() const { return db_; }
 
-    // 
     ERR_STATE err_state() const; 
     bool error() const; 
     bool ok() const;
@@ -150,16 +149,14 @@ struct ConnectionQueue {
 };
 
 class RedisManager {
-    #define SLOT_NUM 16
 public: 
+    static RedisManager* instance();
+    RedisManager(const std::string& host, int port, int timeout_ms, const std::string& password = "");
     RedisManager();
     ~RedisManager();
 
-    RedisManager(const std::string& host, int port, int timeout_ms, const std::string& password = "");
     bool Connect(const std::string& host, int port, int timeout_ms, const std::string& password = ""); 
-
     RedisConnectionImpl* Get(int db);
-    static RedisManager* instance();
 private:
     friend class RedisConnectionImpl;
     void Gc(RedisConnectionImpl* connection);
