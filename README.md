@@ -15,15 +15,17 @@ Cloredis is a simple, flexsible, easy-to-use C++ client library for the Redis da
 
 ## Usage
 
+entry-level usage:
 ``` C++
 RedisManager* manager = RedisManager::instance();
 manager->Connect("127.0.0.1", 6379, 1000, "password"); 
 RedisConnection conn = manager->Get(2);
 std::string my_value = conn->Do("GET %s", "my_key").toString();
-bool exist = conn->Do("EXISTS %s", "my_key").toBool();
+int exist = conn->Do("EXISTS %s", "my_key").toInt32();
 conn->Do("SET %s %d", "my_key", 8);
 // You do not need to release 'conn'
 ```
+
 ## Install
 
 On Linux system you can build the library using the following commands:
@@ -35,6 +37,10 @@ make install
 ## Document
 
 Comming soon.
+
+## Companies using cloredis
+
+* [ofo 小黄车](http://www.ofo.so/#/) - ofo Inc., a Beijing-based bicycle sharing company
 
 ## Authors
 
