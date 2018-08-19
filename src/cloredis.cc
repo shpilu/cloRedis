@@ -7,7 +7,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <sstream>
-#include <hiredis.h>
+#include "hiredis/hiredis.h"
 #include "public/singleton.h"
 #include "public/log.h"
 #include "cloredis.h"
