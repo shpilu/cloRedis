@@ -23,7 +23,7 @@ RedisConnection conn = manager->Get(2);
 std::string my_value = conn->Do("GET %s", "my_key").toString();
 int exist = conn->Do("EXISTS %s", "my_key").toInt32();
 conn->Do("SET %s %d", "my_key", 8);
-// You do not need to release 'conn'
+// You do not need to release 'conn' as cloredis will do it automatically
 ```
 
 ## Install

@@ -9,7 +9,7 @@
 // bool exist = conn->Do("EXISTS %s", key).toBool();
 // conn->Select(3);
 // conn->Do("SET %s %d", "my_key", 8);
-// *(connection releasing is not necessary, RedisConnection class will do it automatically in its destructor function)
+// ...
 //
 
 #ifndef CLORIS_REDIS_H_
