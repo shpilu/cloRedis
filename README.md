@@ -11,7 +11,7 @@ Cloredis is a simple, flexsible, easy-to-use C++ client library for the Redis da
 * Support connection pool naturally.
 * Easier way to run Lua script.
 * High rubustness and fault-tolerance.
-* Support C++11 and upper only.
+* Support C++11 and above version only.
 
 ## Usage
 
@@ -34,7 +34,7 @@ cd src
 make
 make install
 ```
-Or you can customize install directory by running command like "make install PREFIX=$TARGET_DIR".
+Or you can customize install directory by running command like "make install PREFIX=$TARGET_DIR".  
 Noteworthy is that hiredis has been intergrated into cloredis, so you do not need to install hiredis additionally.
 
 ## Document
