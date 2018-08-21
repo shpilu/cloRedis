@@ -1,5 +1,7 @@
-cloredis
+Cloredis
 =====
+
+Cloredis - Make redis easier to access in C++ program environment 
 
 ## Introduction
 
@@ -7,11 +9,11 @@ Cloredis is a simple, flexsible, easy-to-use C++ client library for the Redis da
 
 ## Features
 
-* Automatic memory management.
-* Support connection pool naturally.
-* Easier way to run Lua script.
-* High rubustness and fault-tolerance.
-* Support C++11 and above version only.
+* Automatic memory management
+* Support connection pool naturally
+* Easier way to run Lua script
+* High rubustness and fault-tolerance
+* Support C++11 and above version only
 
 ## Usage
 
@@ -35,7 +37,7 @@ make
 make install
 ```
 Or you can customize install directory by running command like "make install PREFIX=$TARGET_DIR".  
-Noteworthy is that hiredis has been intergrated into cloredis, so you do not need to install hiredis additionally.
+Noteworthy is that hiredis has been intergrated into cloredis, so you do not need to install hiredis separately.
 
 ## Document
 
