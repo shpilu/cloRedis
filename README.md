@@ -1,7 +1,7 @@
 Cloredis
 =====
 
-Cloredis - Make redis easier to access in C++ program environment 
+Cloredis - committed to providing an easier way to access redis in C++ program environment 
 
 ## Introduction
 
@@ -30,7 +30,7 @@ conn->Do("SET %s %d", "my_key", 8);
 
 ## Install
 
-On Linux system you can build cloredis runtime package using the following simple commands:
+On Linux system you can build cloredis compile and runtime environment by running the following commands:
 ``` shell
 cd src
 make
