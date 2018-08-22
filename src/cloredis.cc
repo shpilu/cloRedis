@@ -294,18 +294,22 @@ bool RedisConnectionImpl::Connect(const std::string& host, int port, struct time
 }
 
 RedisConnectionImpl& RedisConnectionImpl::Do(const char *format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    RedisConnectionImpl& resp = this->__Do(format, ap);
+    va_end(ap);
+    return resp;
+}
+
+RedisConnectionImpl& RedisConnectionImpl::__Do(const char *format, va_list ap) {
     ++this->action_count_;
     std::string value("");
+
     if (!redis_context_) {
         this->UpdateProcessState(NULL, true, STATE_ERROR_INVOKE, ERR_NO_CONTEXT);
         return *this; 
     }
-
-    va_list ap;
-    va_start(ap, format);
     redisReply* reply = (redisReply*)redisvCommand(redis_context_, format, ap);
-    va_end(ap);
-
     if (redis_context_->err) {
         this->UpdateProcessState(NULL, true, STATE_ERROR_HIREDIS, redis_context_->errstr, true);
         return *this; 
@@ -439,6 +443,15 @@ RedisConnectionImpl* RedisManager::Get(int db) {
         conn->Select(db);
     }
     return conn;
+}
+
+RedisConnectionImpl& RedisManager::Do(int db, const char *format, ...) {
+    RedisConnectionImpl* conn_impl = this->Get(db); 
+    va_list ap;
+    va_start(ap, format);
+    conn_impl->__Do(format, ap);
+    va_end(ap);
+    return *conn_impl;
 }
 
 void RedisManager::Gc(RedisConnectionImpl* connection) {

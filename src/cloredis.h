@@ -113,6 +113,8 @@ public:
 
     RedisReplyPtr Reply();
 private:
+    RedisConnectionImpl& __Do(const char *format, va_list ap);
+
     bool Connect(const std::string& host, int port , struct timeval &timeout, const std::string& password);
     void UpdateProcessState(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg, bool copy_errstr = false); 
     bool ReclaimOk(int action_limit);
@@ -156,6 +158,7 @@ public:
     ~RedisManager();
 
     bool Connect(const std::string& host, int port, int timeout_ms, const std::string& password = ""); 
+    RedisConnectionImpl& Do(int db, const char *format, ...);
     RedisConnectionImpl* Get(int db);
 private:
     friend class RedisConnectionImpl;

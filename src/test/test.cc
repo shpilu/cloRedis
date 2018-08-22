@@ -6,7 +6,7 @@ using namespace cloris;
 
 const char *g_redis_conf = " \
 [redis] \n\
-host=127.0.0.1 \n\
+host=192.168.19.229 \n\
 port=6379 \n\
 timeout=1000\n\
 password=weijian\n\
@@ -37,6 +37,9 @@ void test_get() {
         std::cout << "test begin=###" << std::endl;
         std::cout << "m_key=" << value << std::endl;
     }
+
+    std::cout << "manager Do test, m_Key=" << manager->Do(2, "GET %s", "m_key").toString() << std::endl;
+
     {
         RedisReplyPtr reply;
         {
