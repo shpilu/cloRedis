@@ -43,7 +43,7 @@ Noteworthy is that hiredis has been intergrated into cloredis, so you do not nee
 
 Comming soon.
 
-## Companies using cloredis
+## Who Is Using Cloredis?
 
 * [ofo 小黄车](http://www.ofo.so/#/) - ofo Inc., a Beijing-based bicycle sharing company
 

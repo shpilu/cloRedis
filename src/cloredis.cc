@@ -1,6 +1,6 @@
 //
-// Cloredis core implementation
 // Copyright (c) 2018 James Wei (weijianlhp@163.com). All rights reserved.
+// Cloredis core implementation
 //
 // ChangeLog:
 // 2018-04-20  Created
@@ -267,6 +267,9 @@ void RedisConnectionImpl::UpdateProcessState(redisReply* reply, bool reclaim, ER
     } else {
         reply_ptr_.reset(new RedisReply(reply, reclaim, state, err_msg, copy_errstr));
     }
+    if (err_msg) {
+        manager_->AddErrorRecord(this);
+    }
 }
 
 bool RedisConnectionImpl::Connect(const std::string& host, int port, struct timeval &timeout, const std::string& password) {
@@ -362,7 +365,9 @@ RedisManager::RedisManager()
       timeout_({1, 0}),
       password_(""),
       action_limit_(50),
-      time_limit_(60000) {
+      time_limit_(60000),
+      conn_in_use_(0),
+      conn_in_pool_(0) {
     cLog(TRACE, "RedisManager constructor "); 
 }
 
@@ -391,7 +396,14 @@ RedisManager::RedisManager(const std::string& host, int port, int timeout_ms, co
       timeout_({timeout_ms / 1000, (timeout_ms % 1000) * 1000}),
       password_(password),
       action_limit_(50),
-      time_limit_(60000) {
+      time_limit_(60000),
+      conn_in_use_(0),
+      conn_in_pool_(0) {
+}
+
+
+void RedisManager::AddErrorRecord(RedisConnectionImpl* conn) {
+    err_str_ = conn->err_str();
 }
 
 bool RedisManager::Connect(const std::string& host, int port, int timeout_ms, const std::string& password) {
@@ -400,16 +412,9 @@ bool RedisManager::Connect(const std::string& host, int port, int timeout_ms, co
     timeout_ = { timeout_ms / 1000, (timeout_ms % 1000) * 1000 };
     password_ = password;
     
-    bool result;
-    RedisConnectionImpl *connection = new RedisConnectionImpl(this);
-    if (connection->Connect(host_, port, timeout_, password_)) {
-        result = true;
-    } else {
-        result = false;
-    }
-    connection->Done();
+    RedisConnection conn = this->Get(0); 
 
-    return result;
+    return conn->ok();
 }
 
 RedisConnectionImpl* RedisManager::Get(int db) {
@@ -429,6 +434,7 @@ RedisConnectionImpl* RedisManager::Get(int db) {
                 cqueue->conns.pop_front();
                 cLog(DEBUG, "Get connection from pool, slot=%d", db);
             }
+            __sync_fetch_and_sub(&conn_in_pool_, 1);
         }
     }
     
@@ -442,9 +448,11 @@ RedisConnectionImpl* RedisManager::Get(int db) {
         conn->Connect(host_, port_, timeout_, password_);
         conn->Select(db);
     }
+    __sync_fetch_and_add(&conn_in_use_, 1);
     return conn;
 }
 
+// TODO has bug, release connnection
 RedisConnectionImpl& RedisManager::Do(int db, const char *format, ...) {
     RedisConnectionImpl* conn_impl = this->Get(db); 
     va_list ap;
@@ -455,9 +463,7 @@ RedisConnectionImpl& RedisManager::Do(int db, const char *format, ...) {
 }
 
 void RedisManager::Gc(RedisConnectionImpl* connection) {
-    if (!connection) {
-        return;
-    }
+    __sync_fetch_and_sub(&conn_in_use_, 1);
     if (!connection->ReclaimOk(this->action_limit_)) {
         delete connection;
         return;
@@ -467,6 +473,7 @@ void RedisManager::Gc(RedisConnectionImpl* connection) {
         std::lock_guard<std::mutex> lock(cqueue->queue_mtx);
         // LRU queue
         cqueue->conns.push_front(connection);
+        __sync_fetch_and_add(&conn_in_pool_, 1);
     }
     cLog(INFO, "Put connection back into connection pool, slot=%d", connection->db());
 }

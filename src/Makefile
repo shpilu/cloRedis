@@ -33,6 +33,7 @@ WARNINGS=-Wall -W -Wwrite-strings
 CXXFLAGS=-std=c++11 -fPIC -fno-omit-frame-pointer
 LDFLAGS+=-L../lib # xxx 
 LDYNAMICS+=-lpthread -lcconf # -lhiredis
+TEST_SPEC_LD=-lgtest -lpthread
 INCLUDES=-I. -I./include # -I/usr/local/include/hiredis
 
 CFLAGS=-std=c99 -pedantic -c -O3 -fPIC  -Wall -W -Wstrict-prototypes -Wwrite-strings # -g -ggdb
@@ -59,7 +60,7 @@ all: $(DYLIB_MINOR_NAME) $(STLIB_NAME) $(TEST_BIN)
 	@echo "All done ===="
 
 $(TEST_BIN):$(OBJECTS) $(TEST_OBJECTS) $(HIREDIS_OBJS)
-	$(CXX) $^ -o $@ $(LDFLAGS) $(LDYNAMICS) 
+	$(CXX) $^ -o $@ $(LDFLAGS) $(LDYNAMICS) ${TEST_SPEC_LD}
 
 $(DYLIB_MINOR_NAME):$(OBJECTS) $(HIREDIS_OBJS)
 	$(CXX) -o $@ $^ -shared -Wl,-soname,$(DYLIB_MAJOR_NAME) $(LDFLAGS) $(LDYNAMICS) 

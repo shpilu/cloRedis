@@ -160,17 +160,24 @@ public:
     bool Connect(const std::string& host, int port, int timeout_ms, const std::string& password = ""); 
     RedisConnectionImpl& Do(int db, const char *format, ...);
     RedisConnectionImpl* Get(int db);
+    const std::string& err_str() const { return err_str_; }
+    int conn_in_use() const { return conn_in_use_; }
+    int conn_in_pool() const { return conn_in_pool_; }
 private:
     friend class RedisConnectionImpl;
     void Gc(RedisConnectionImpl* connection);
+    void AddErrorRecord(RedisConnectionImpl* conn);
 
     ConnectionQueue queue_[SLOT_NUM];
+    std::string err_str_;
     std::string host_;
     int port_;
     struct timeval timeout_;
     std::string password_;
     int action_limit_;
     uint64_t time_limit_;
+    int conn_in_use_;
+    int conn_in_pool_;
 };
 
 } // namespace cloris
