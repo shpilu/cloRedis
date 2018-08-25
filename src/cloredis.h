@@ -18,7 +18,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
-#include <deque>
+#include <forward_list>
 
 #define CLOREDIS_SONAME libcloredis
 #define CLOREDIS_MAJOR 0
@@ -147,7 +147,7 @@ private:
 
 struct ConnectionQueue {
     std::mutex queue_mtx;
-    std::deque<RedisConnectionImpl*> conns;
+    std::forward_list<RedisConnectionImpl*> conns;
 };
 
 class RedisManager {

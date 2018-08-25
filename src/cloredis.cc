@@ -420,10 +420,10 @@ bool RedisManager::Connect(const std::string& host, int port, int timeout_ms, co
 RedisConnectionImpl* RedisManager::Get(int db) {
     RedisConnectionImpl* conn = NULL;
     ConnectionQueue* cqueue = &queue_[db];
-    if (cqueue->conns.size() > 0) {
+    if (!cqueue->conns.empty()) {
         uint64_t now = get_current_time_ms();
         std::lock_guard<std::mutex> lock(cqueue->queue_mtx);
-        if (cqueue->conns.size() > 0) {
+        if (!cqueue->conns.empty()) {
             RedisConnectionImpl* tmp_conn = cqueue->conns.front();
             if (now - tmp_conn->access_time_ > this->time_limit_) {
                 cqueue->conns.pop_front();
