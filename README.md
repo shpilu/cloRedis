@@ -1,7 +1,7 @@
 Cloredis
 =====
 
-Cloredis - committed to providing an easier way to access redis in C++ program environment 
+Cloredis - committed to providing an easier way to access redis in C++ program environment.
 
 ## Introduction
 

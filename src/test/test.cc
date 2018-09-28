@@ -11,10 +11,10 @@ using namespace cloris;
 
 const char *g_redis_conf = " \
 [redis] \n\
-host=192.168.19.229 \n\
+host=172.17.224.212 \n\
 port=6379 \n\
 timeout=1000\n\
-password=weijian\n\
+password=cloris520 \n\
 ";
 
 TEST(cloredis, test1) {
