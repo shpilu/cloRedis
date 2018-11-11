@@ -8,8 +8,8 @@
 #include <boost/algorithm/string.hpp>
 #include <sstream>
 #include "hiredis/hiredis.h"
-#include "public/singleton.h"
-#include "public/log.h"
+#include "internal/singleton.h"
+#include "internal/log.h"
 #include "cloredis.h"
 
 namespace cloris {

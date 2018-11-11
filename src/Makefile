@@ -50,7 +50,7 @@ STLIB_NAME=$(CLOREDIS_SONAME).$(STLIBSUFFIX)
 
 TEST_SRC=$(wildcard test/*.cc)
 TEST_OBJECTS=$(TEST_SRC:%.cc=%.o)
-SOURCES=$(wildcard *.cc public/*.cc) 
+SOURCES=$(wildcard *.cc internal/*.cc) 
 OBJECTS=$(SOURCES:%.cc=%.o)
 HIREDIS_SRC=$(wildcard hiredis/*.c)
 HIREDIS_OBJS=$(HIREDIS_SRC:%.c=%.o)
