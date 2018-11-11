@@ -28,7 +28,7 @@ conn->Do("SET %s %d", "my_key", 8);
 // You do not need to release 'conn' as cloredis will do it automatically
 ```
 
-## Install
+## Installation
 
 On Linux system you can build cloredis compile and runtime environment by running the following commands:
 ``` shell
