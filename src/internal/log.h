@@ -7,7 +7,8 @@
 #ifndef CLORIS_LOG_H_
 #define CLORIS_LOG_H_
 
-namespace cloris {
+#define BUG_ON(args) 
+#define BUG(args)
 
 #ifdef USE_DEBUG 
     #define cLog(level, format, ...) \
@@ -16,6 +17,8 @@ namespace cloris {
     #define cLog(level, format, ...) \
         void(0)
 #endif
+
+namespace cloris {
 
 enum LogLevel {
     TRACE = 1,
