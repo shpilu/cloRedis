@@ -11,6 +11,10 @@
 #define MAX_DB_NUM 16
 #define DEFAULT_DB 0
 
+#define CLOREDIS_SONAME libcloredis
+#define CLOREDIS_MAJOR 0
+#define CLOREDIS_MINOR 1
+
 namespace cloris {
 
 enum RedisRole {

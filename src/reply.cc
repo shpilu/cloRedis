@@ -1,3 +1,4 @@
+#include <string.h>
 #include <memory>
 #include "hiredis/hiredis.h"
 #include "internal/log.h"
@@ -45,12 +46,8 @@ std::string RedisReply::toString() const {
         switch (reply_->type) {
             case REDIS_REPLY_STRING:
             case REDIS_REPLY_STATUS:
-                value = reply_->str;
-                break;
             case REDIS_REPLY_ERROR:
-                if (reply_->err) {
-                    value = reply_->str;
-                }
+                value = reply_->str;
                 break;
             default:
                 ;

@@ -2,7 +2,6 @@
 // Generic pool implementation
 // with support for both connection pool and memory pool
 // multithread-safe
-// expired by redigo(https://github.com/gomodule/redigo.git)
 // Copyright (c) 2017 James Wei (weijianlhp@163.com). All rights reserved.
 //
 
@@ -70,7 +69,7 @@ struct IdleList {
 
 template <typename T> 
 void IdleList<T>::PushFront(ListItem<T> *item) {
-    item->next = this->next;
+    item->next = this->front;
     item->prev = NULL;
     if (this->count == 0) {
         this->back = item;
@@ -280,7 +279,7 @@ void ConnectionPool<Type>::Put(Type* type) {
         }
     }
     if (idl) {
-        Gc(idl);
+        Gc(idl->GetObject());
     }
 }
 

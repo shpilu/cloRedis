@@ -5,7 +5,6 @@
 
 namespace cloris {
 
-class redisReply;
 class RedisReply;
 typedef std::shared_ptr<RedisReply> RedisReplyPtr;
 

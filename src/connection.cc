@@ -134,9 +134,5 @@ RedisConnection& RedisConnection::operator=(RedisConnectionImpl* connection) {
     return *this;
 }
 
-bool RedisConnection::operator!() {
-    return this->impl_ ? true : false;
-}
-
 } // namespace cloris
 

@@ -23,12 +23,14 @@ class redisContext;
 namespace cloris {
 
 class RedisConnectionImpl;
+class RedisConnection;
 
 typedef ConnectionPool<RedisConnectionImpl> RedisConnectionPool;
 
 class RedisConnectionImpl : public RedisReply {
     friend RedisConnectionPool; 
     friend IdleList<RedisConnectionImpl>;
+    friend RedisConnection;
 public:
     static bool Init(void *p, const std::string& host, int port, const std::string& password, int timeout_ms);
 
