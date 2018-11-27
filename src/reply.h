@@ -1,10 +1,21 @@
-
 #ifndef CLORIS_REDIS_REPLY_H_
 #define CLORIS_REDIS_REPLY_H_
 
+#define REDIS_ERRSTR_LEN 256
+
 namespace cloris {
 
+class redisReply;
+class RedisReply;
 typedef std::shared_ptr<RedisReply> RedisReplyPtr;
+
+enum ERR_STATE {
+    STATE_OK = 0,
+    STATE_ERROR_TYPE = 1,
+    STATE_ERROR_COMMAND = 2,
+    STATE_ERROR_HIREDIS = 3,
+    STATE_ERROR_INVOKE = 4,
+};
 
 class RedisReply {
 public:

@@ -1,4 +1,10 @@
-#include "redis_manager.h"
+
+#include <vector>
+#include <boost/algorithm/string.hpp>
+#include "internal/singleton.h"
+#include "internal/log.h"
+#include "manager.h"
+
 
 namespace cloris {
 
@@ -25,12 +31,11 @@ static std::vector<ServiceAddress> parse_address_vector(const std::string& host)
     return addr_vec;
 }
 
-// slave_({NULL}) {
 RedisManager::RedisManager() 
     : inited_(false),
-      slave_cnt_(0),
-      master_({NULL}) {
+      slave_cnt_(0) {
     cLog(TRACE, "RedisManager constructor ");
+    memset(master_, 0, sizeof(RedisConnectionPool*) * MAX_DB_NUM);
 }
 
 RedisManager::~RedisManager() {
@@ -60,10 +65,10 @@ RedisManager* RedisManager::instance() {
 }
 
 bool RedisManager::Init(const std::string& host, 
-             const std::string& password = "", 
-             int timeout_ms = DEFAULT_TIMEOUT_MS, 
-             ConnectionPoolOption* option = NULL, 
-             std::string *err_msg = NULL) {
+             const std::string& password, 
+             int timeout_ms, 
+             ConnectionPoolOption* option, 
+             std::string *err_msg) {
     if (inited_) {
         if (err_msg) {
             *err_msg = ERR_REENTERING;
@@ -78,9 +83,9 @@ bool RedisManager::Init(const std::string& host,
         }
         return false;
     }
-    InitHandler handler = std::bind(&RedisConnectionImpl::Connect, std::placeholders::_1, 
-            master_address_vec[0].host, 
-            master_address_vec[0].port, 
+    RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+            address_vec[0].host, 
+            address_vec[0].port, 
             password,
             timeout_ms);
     master_[DEFAULT_DB] = new RedisConnectionPool(option, handler);
@@ -138,6 +143,9 @@ bool RedisManager::InitEx(const std::string& master_host,
 */
 
 RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole role, int index) {
+    // TODO delete it
+    (void)role;
+    (void)index;
     if (db >= MAX_DB_NUM) {
         return NULL;
     }

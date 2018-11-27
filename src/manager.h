@@ -44,7 +44,7 @@ public:
     */
     RedisConnectionImpl* Get(int db, std::string* err_msg = NULL, RedisRole role = MASTER, int index = -1);
     void Flush();
-pivate:
+private:
     bool inited_;
     int  slave_cnt_;
     RedisConnectionPool *master_[MAX_DB_NUM];

@@ -40,15 +40,7 @@ void RedisConnectionImpl::Done() {
     return;
 }
 
-void RedisConnectionImpl::UpdateProcessState(redisReply* reply, 
-        bool reclaim, 
-        ERR_STATE state, 
-        const char* err_msg, 
-        bool copy_errstr) {
-    reply_ptr_->Update(reply, reclaim, state, err_msg, copy_errstr);
-}
-
-bool RedisConnectionImpl::Connect(const std::string& host, int port, struct timeval &timeout, const std::string& password) {
+bool RedisConnectionImpl::Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout) {
     if (redis_context_) {
         this->Update(NULL, true, STATE_ERROR_INVOKE, ERR_REENTERING);
         cLog(ERROR, "internal implementation bug, redis_context is not NULL in 'Connect'");
@@ -70,6 +62,12 @@ bool RedisConnectionImpl::Connect(const std::string& host, int port, struct time
     }
     this->Do("AUTH %s", password.c_str());
     return this->ok();
+}
+
+bool RedisConnectionImpl::Init(void *p, const std::string& host, int port, const std::string& password, int timeout_ms) {
+    RedisConnectionImpl* obj = static_cast<RedisConnectionImpl*>(p);
+    struct timeval timeout = { timeout_ms / 1000, (timeout_ms % 1000) * 1000 };
+    return obj->Connect(host, port, password, timeout);
 }
 
 RedisConnectionImpl& RedisConnectionImpl::Do(const char *format, ...) {

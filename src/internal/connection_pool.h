@@ -9,8 +9,8 @@
 #ifndef CLORIS_CONNECTION_POOL_H_
 #define CLORIS_CONNECTION_POOL_H_
 
+#include<sys/time.h>
 #include <unistd.h>
-#include <time.h>
 #include <mutex>
 #include <forward_list>
 #include <functional>
@@ -54,8 +54,8 @@ struct IdleList {
     ~IdleList() {
         for (ListItem<T> *tobj = front; tobj != NULL; tobj = tobj->next) {
             T* t = tobj->GetObject();
-            t->~Type();
-            tobj->~ListItem<Type>();
+            t->~T();
+            tobj->~ListItem<T>();
             free(tobj);
         }
     }
@@ -93,7 +93,7 @@ void IdleList<T>::PopFront() {
         this->front = NULL;
         this->back = NULL;
     } else {
-        item->next.prev = NULL;
+        item->next->prev = NULL;
         this->front = item->next;
     }
     item->next = NULL;
@@ -146,11 +146,12 @@ struct ConnectionPoolStats {
 
 template <typename Type> 
 class ConnectionPool {
-    typedef std::function<void(void)> InitHandler;
 public:
-    ConnectionPool(InitHandler ihandler = NULL) : init_handler_(NULL), active_cnt_(0) { }
+    typedef std::function<bool(void*)> InitHandler;
+
+    ConnectionPool(InitHandler ihandler = NULL) : init_handler_(ihandler), active_cnt_(0) { }
     ConnectionPool(const ConnectionPoolOption* option, InitHandler ihandler = NULL) 
-        : init_handler_(NULL), 
+        : init_handler_(ihandler), 
           active_cnt_(0) { 
         if (option) {
             option_ = *option;
@@ -177,7 +178,7 @@ private:
 
 template<typename Type>
 ConnectionPool<Type>::~ConnectionPool() {
-    ListItem<Type*> ptr(NULL); 
+    ListItem<Type> *ptr(NULL); 
     while (!mem_pool_.empty()) {
         ptr = mem_pool_.front();
         mem_pool_.pop_front();
@@ -187,6 +188,8 @@ ConnectionPool<Type>::~ConnectionPool() {
 
 template<typename Type>
 Type* ConnectionPool<Type>::Get(std::string* err_msg) {
+    //TODO 
+    (void)err_msg;
     if (option_.max_active > 0 && active_cnt_ >= option_.max_active) {
         ++stats_.overload_error;
         return NULL;
@@ -194,29 +197,29 @@ Type* ConnectionPool<Type>::Get(std::string* err_msg) {
     std::unique_lock<std::mutex> lck(mutex_, std::defer_lock);
     if (option_.idle_timeout_ms > 0) {
         lck.lock();
-        for (ListItem<Type*> item = idle_.back; 
-            (item != NULL) && (item.active_time + option_.idle_timeout_ms < __get_current_time_ms()); 
+        for (ListItem<Type> *item = idle_.back; 
+            (item != NULL) && (item->active_time + option_.idle_timeout_ms < __get_current_time_ms()); 
             item = idle_.back) {
              idle_.PopBack();
              lck.unlock();
-             Gc(item);
+             Gc(item->GetObject());
              lck.lock();
         }
         lck.unlock();
     }
     lck.lock();
-    for (ListItem<Type*> item = idle_.front; item != NULL; item = idle_.front) {
+    for (ListItem<Type> *item = idle_.front; item != NULL; item = idle_.front) {
         idle_.PopFront();
-        if ((option_.max_conn_life_time <= 0) || (__get_current_time_ms() - item.create_time < item.max_conn_life_time)) {
+        if ((option_.max_conn_life_time <= 0) || (__get_current_time_ms() - item->create_time < option_.max_conn_life_time)) {
             // TODO
             lck.unlock();
             return item->GetObject(); 
         }
         lck.unlock();
-        Gc(item);
+        Gc(item->GetObject());
         lck.lock();
     }
-    lock.unlock();
+    lck.unlock();
     return GetNewInstance();
 }
 
@@ -224,14 +227,14 @@ template<typename Type>
 Type* ConnectionPool<Type>::GetNewInstance() {
     ListItem<Type>* ptr(NULL);
     {
-        std::lock_guard<std::mutext> lk(pool_mtx_);
+        std::lock_guard<std::mutex> lk(pool_mtx_);
         if (!mem_pool_.empty()) {
             ptr = mem_pool_.front();
             mem_pool_.pop_front();
         }
     }
     if (!ptr) {
-        ptr = malloc(sizeof(ListItem<Type>) + sizeof(Type));
+        ptr = (ListItem<Type>*)malloc(sizeof(ListItem<Type>) + sizeof(Type));
         if (!ptr) {
             ++stats_.malloc_fail_;
             return NULL;
@@ -239,9 +242,9 @@ Type* ConnectionPool<Type>::GetNewInstance() {
     }
     __sync_fetch_and_add(&active_cnt_, 1);
     // placement new
-    new(ptr) ListItem;
+    new(ptr) ListItem<Type>;
     Type* obj_ptr = reinterpret_cast<Type*>(ptr + 1);
-    new(obj_ptr) Type;
+    new(obj_ptr) Type(this);
     if (init_handler_) {
         if (!init_handler_(obj_ptr)) {
             Gc(obj_ptr);
@@ -252,9 +255,9 @@ Type* ConnectionPool<Type>::GetNewInstance() {
 }
 
 template<typename Type>
-ConnectionPool<Type>::Gc(Type* type) {
+void ConnectionPool<Type>::Gc(Type* type) {
     type->~Type();
-    ListItem<Type> *item = reinterpret_cast<ListItem<Type>>(type) - 1;
+    ListItem<Type> *item = reinterpret_cast<ListItem<Type>*>(type) - 1;
     item->~ListItem<Type>();
     {
         std::lock_guard<std::mutex> lk(pool_mtx_);
@@ -264,12 +267,12 @@ ConnectionPool<Type>::Gc(Type* type) {
 }
 
 template<typename Type>
-ConnectionPool<Type>::Put(Type* type) {
-    ListItem<Type> *item = reinterpret_cast<ListItem<Type>>(type) - 1;
+void ConnectionPool<Type>::Put(Type* type) {
+    ListItem<Type> *item = reinterpret_cast<ListItem<Type>*>(type) - 1;
     item->active_time = __get_current_time_ms();
     ListItem<Type> *idl(NULL);
     {
-        std::lock_guard<std::mutext> lk(mutex_);
+        std::lock_guard<std::mutex> lk(mutex_);
         idle_.PushFront(item);
         if ((option_.max_idle > 0) && (idle_.count > option_.max_idle)) {
             idl = idle_.back;
