@@ -48,7 +48,7 @@ DYLIB_MINOR_NAME=$(CLOREDIS_SONAME).$(DYLIBSUFFIX).$(MAJOR_VERSION).$(MINOR_VERS
 DYLIB_NAME=$(CLOREDIS_SONAME).$(DYLIBSUFFIX)  										 
 STLIB_NAME=$(CLOREDIS_SONAME).$(STLIBSUFFIX)										
 
-TEST_SRC=$(wildcard test/*.cc)
+TEST_SRC=$(wildcard googletest/*.cc)
 TEST_OBJECTS=$(TEST_SRC:%.cc=%.o)
 SOURCES=$(wildcard *.cc internal/*.cc) 
 OBJECTS=$(SOURCES:%.cc=%.o)
