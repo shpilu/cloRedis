@@ -1,6 +1,5 @@
 #include <string.h>
 #include <memory>
-#include "hiredis/hiredis.h"
 #include "internal/log.h"
 #include "reply.h"
 

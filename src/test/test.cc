@@ -11,20 +11,18 @@ using namespace cloris;
 
 const char *g_redis_conf = " \
 [redis] \n\
-host=172.17.224.212 \n\
-port=6379 \n\
+host=172.17.224.212:6379 \n\
 timeout=1000\n\
 password=cloris520 \n\
 ";
 
 TEST(cloredis, test1) {
     std::string host     = Config::instance()->getString("redis.host");
-    int32_t port         = Config::instance()->getInt32("redis.port");
     int32_t timeout      = Config::instance()->getInt32("redis.timeout");
     std::string password = Config::instance()->getString("redis.password");
 
     RedisManager* manager = RedisManager::instance();
-    ASSERT_TRUE(manager->Connect(host, port, timeout, password)) << manager->err_str();
+    ASSERT_TRUE(manager->Init(host, password, timeout));
     ASSERT_EQ(1, manager->conn_in_pool());
 
     std::string value;

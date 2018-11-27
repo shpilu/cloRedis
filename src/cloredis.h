@@ -3,8 +3,8 @@
 // Copyright 2018 James Wei (weijianlhp@163.com)
 //
 
-#ifndef CLORIS_CLOREDIS_MANAGER_H_
-#define CLORIS_CLOREDIS_MANAGER_H_
+#ifndef CLORIS_CLOREDIS_H_
+#define CLORIS_CLOREDIS_H_
 
 #include "connection.h"
 
@@ -48,6 +48,10 @@ public:
     */
     RedisConnectionImpl* Get(int db, std::string* err_msg = NULL, RedisRole role = MASTER, int index = -1);
     void Flush();
+
+    // TODO
+    int conn_in_use() { return 0; }
+    int conn_in_pool() { return 0; }
 private:
     bool inited_;
     int  slave_cnt_;
@@ -57,4 +61,4 @@ private:
 
 } // namespace cloris
 
-#endif // CLORIS_CLOREDIS_MANAGER_H_ 
+#endif // CLORIS_CLOREDIS_H_ 

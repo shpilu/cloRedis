@@ -3,6 +3,8 @@
 
 #define REDIS_ERRSTR_LEN 256
 
+#include "hiredis/hiredis.h"
+
 namespace cloris {
 
 class RedisReply;

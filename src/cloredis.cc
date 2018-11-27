@@ -3,8 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include "internal/singleton.h"
 #include "internal/log.h"
-#include "manager.h"
-
+#include "cloredis.h"
 
 namespace cloris {
 
