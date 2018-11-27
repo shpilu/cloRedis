@@ -2,8 +2,8 @@
 // Generic pool implementation
 // with support for both connection pool and memory pool
 // multithread-safe
-// to some exent expired by redigo(https://github.com/gomodule/redigo.git)
-// Copyright 2017 James Wei (weijianlhp@163.com)
+// expired by redigo(https://github.com/gomodule/redigo.git)
+// Copyright (c) 2017 James Wei (weijianlhp@163.com). All rights reserved.
 //
 
 #ifndef CLORIS_CONNECTION_POOL_H_
@@ -149,13 +149,15 @@ class ConnectionPool {
     typedef std::function<void(void)> InitHandler;
 public:
     ConnectionPool(InitHandler ihandler = NULL) : init_handler_(NULL), active_cnt_(0) { }
-    ConnectionPool(const ConnectionPoolOption& option, InitHandler ihandler = NULL) 
+    ConnectionPool(const ConnectionPoolOption* option, InitHandler ihandler = NULL) 
         : init_handler_(NULL), 
-          option_(option), 
           active_cnt_(0) { 
+        if (option) {
+            option_ = *option;
+        }
     }
     ~ConnectionPool(); 
-    Type* Get();
+    Type* Get(std::string* err_msg = NULL);
     void Put(Type* type);
 
 private:
@@ -184,7 +186,7 @@ ConnectionPool<Type>::~ConnectionPool() {
 }
 
 template<typename Type>
-Type* ConnectionPool<Type>::Get() {
+Type* ConnectionPool<Type>::Get(std::string* err_msg) {
     if (option_.max_active > 0 && active_cnt_ >= option_.max_active) {
         ++stats_.overload_error;
         return NULL;
@@ -193,8 +195,8 @@ Type* ConnectionPool<Type>::Get() {
     if (option_.idle_timeout_ms > 0) {
         lck.lock();
         for (ListItem<Type*> item = idle_.back; 
-             (item != NULL) && (item.active_time + option_.idle_timeout_ms < __get_current_time_ms()); 
-             item = idle_.back) {
+            (item != NULL) && (item.active_time + option_.idle_timeout_ms < __get_current_time_ms()); 
+            item = idle_.back) {
              idle_.PopBack();
              lck.unlock();
              Gc(item);

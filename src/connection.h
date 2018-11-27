@@ -28,7 +28,7 @@ namespace cloris {
 class RedisReply;
 class RedisConnectionImpl;
 
-typedef ConnectionPool<GenericConnection, RedisConnectionImpl> RedisConnectionPool;
+typedef ConnectionPool<RedisConnectionImpl> RedisConnectionPool;
 
 class RedisConnectionImpl : public GenericConnection, public RedisReply {
     friend class RedisConnectionPool; 
@@ -62,6 +62,7 @@ public:
     ~RedisConnection();
 
     RedisConnection& operator=(RedisConnectionImpl* connection);
+    bool operator!();
     RedisConnectionImpl* operator->();
     RedisConnectionImpl& operator*();
 private:

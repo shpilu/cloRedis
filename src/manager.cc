@@ -25,11 +25,11 @@ static std::vector<ServiceAddress> parse_address_vector(const std::string& host)
     return addr_vec;
 }
 
+// slave_({NULL}) {
 RedisManager::RedisManager() 
     : inited_(false),
       slave_cnt_(0),
-      master_(NULL),
-      slave_(NULL) {
+      master_({NULL}) {
     cLog(TRACE, "RedisManager constructor ");
 }
 
@@ -39,14 +39,18 @@ RedisManager::~RedisManager() {
 }
 
 void RedisManager::Flush() {
-    if (master_) {
-        delete master_;
-    }
-    if (slave_) {
-        for (int i = 0; i < slave_cnt_; ++i) {
-            delete slave_[i];
+    for (int i = 0; i < MAX_DB_NUM; ++i) {
+        if (master_[i]) {
+            delete master_[i];
         }
-        free(slave_);
+        /*
+        if (slave_[i]) {
+            for (int j = 0; j < slave_cnt_; ++j) {
+                delete slave_[i][j];
+            }
+            free(slave_[i]);
+        }
+        */
     }
     inited_ = false;
 }
@@ -55,10 +59,10 @@ RedisManager* RedisManager::instance() {
     return Singleton<RedisManager>::instance();
 }
 
-bool RedisManager::Connect(const std::string& host, 
+bool RedisManager::Init(const std::string& host, 
              const std::string& password = "", 
              int timeout_ms = DEFAULT_TIMEOUT_MS, 
-             ConnectionOption* option = NULL, 
+             ConnectionPoolOption* option = NULL, 
              std::string *err_msg = NULL) {
     if (inited_) {
         if (err_msg) {
@@ -74,20 +78,24 @@ bool RedisManager::Connect(const std::string& host,
         }
         return false;
     }
-    BUG_ON(master_ != NULL);
-    master_ = new RedisConnectionPool();
-    if (!master_->Init(address_vec[0].host, address_vec[0].port, timeout_ms, option, err_msg)) {
-        return false;
-    } else {
-        return true;
-    }
+    InitHandler handler = std::bind(&RedisConnectionImpl::Connect, std::placeholders::_1, 
+            master_address_vec[0].host, 
+            master_address_vec[0].port, 
+            password,
+            timeout_ms);
+    master_[DEFAULT_DB] = new RedisConnectionPool(option, handler);
+
+    RedisConnection conn = master_[DEFAULT_DB]->Get(err_msg);
+
+    return conn ? true : false;
 }
 
-bool RedisManager::ConnectEx(const std::string& master_host, 
+/*
+bool RedisManager::InitEx(const std::string& master_host, 
                const std::string& slave_hosts, 
                const std::string& password = "", 
                int timeout_ms = DEFAULT_TIMEOUT_MS,
-               ConnectionOption* option = NULL,
+               ConnectionPoolOption* option = NULL,
                std::string* err_msg = NULL) {
     if (inited_) {
         if (err_msg) {
@@ -103,11 +111,13 @@ bool RedisManager::ConnectEx(const std::string& master_host,
         }
         return false;
     }
-    BUG_ON(master_ != NULL);
-    master_ = new RedisConnectionPool();
-    if (!master_->Init(master_address_vec[0].host, master_address_vec[0].port, timeout_ms, option, err_msg)) {
-        return false;
-    } 
+    InitHandler handler = std::bind(&RedisConnectionImpl::Connect, std::placeholders::_1, 
+            master_address_vec[0].host, 
+            master_address_vec[0].port, 
+            timeout_ms);
+
+    master_[0] = new RedisConnectionPool(handler);
+
     std::vector<RedisAddress> slave_address_vec = parse_address_vector(slave_hosts);
     if (slave_address_vec.size() < 1) {
         return true;
@@ -125,11 +135,22 @@ bool RedisManager::ConnectEx(const std::string& master_host,
     }
     return true;
 }
+*/
 
-RedisConnectionImpl* RedisManager::Get(int db, RedisRole role = MASTER, int index = -1) {
+RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole role, int index) {
+    if (db >= MAX_DB_NUM) {
+        return NULL;
+    }
+    if (master_[db]) {
+        return master_[db]->Get(err_msg);
+    } else {
+        return NULL;
+    }
+
+    /*
     if (role == MASTER) {
-        if (master_) {
-            return master_->Get(db);
+        if (master_[db]) {
+            return master_[db]->Get();
         } else {
             return NULL;
         }
@@ -141,6 +162,7 @@ RedisConnectionImpl* RedisManager::Get(int db, RedisRole role = MASTER, int inde
             return NULL;
         }
     }
+    */
 }
 
 } // namespace cloris

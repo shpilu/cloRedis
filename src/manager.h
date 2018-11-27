@@ -8,6 +8,9 @@
 
 #include "connection.h"
 
+#define MAX_DB_NUM 16
+#define DEFAULT_DB 0
+
 namespace cloris {
 
 enum RedisRole {
@@ -26,24 +29,26 @@ public:
     static RedisManager* instance();
     RedisManager();
     ~RedisManager();
-    bool Connect(const std::string& host, 
+    bool Init(const std::string& host, 
                  const std::string& password = "", 
                  int timeout_ms = DEFAULT_TIMEOUT_MS, 
-                 ConnectionOption* option = NULL,
+                 ConnectionPoolOption* option = NULL,
                  std::string* err_msg = NULL); 
-    bool ConnectEx(const std::string& master_host, 
+    /*
+    bool InitEx(const std::string& master_host, 
                    const std::string& slave_hosts, 
                    const std::string& password = "", 
                    int timeout_ms = DEFAULT_TIMEOUT_MS,
                    ConnectionOption* option = NULL,
                    std::string* err_msg = NULL); 
-    RedisConnectionImpl* Get(int db, RedisRole role = MASTER);
+    */
+    RedisConnectionImpl* Get(int db, std::string* err_msg = NULL, RedisRole role = MASTER, int index = -1);
     void Flush();
 pivate:
     bool inited_;
     int  slave_cnt_;
-    RedisConnectionPool *master_;
-    RedisConnectionPool **slave_;
+    RedisConnectionPool *master_[MAX_DB_NUM];
+    // RedisConnectionPool **slave_[MAX_DB_NUM];
 };
 
 } // namespace cloris
