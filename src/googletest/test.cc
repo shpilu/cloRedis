@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2018 James Wei (weijianlhp@163.com). All rights reserved.
 // Cloredis unit test based on Google Test 
+// Copyright (c) 2018 James Wei (weijianlhp@163.com). All rights reserved.
 //
 
 #include <gtest/gtest.h>
@@ -13,6 +13,7 @@ using namespace cloris;
 const char *g_redis_conf = " \
 [redis] \n\
 host=172.17.224.212:6379 \n\
+slave_host=172.17.224.212:6380,172.17.224.212:6381\n\
 timeout=1000\n\
 password=cloris520 \n\
 ";
@@ -125,11 +126,6 @@ TEST(cloredis, max_idle_test) {
     ASSERT_EQ(4, manager->ConnectionInPool());
     delete manager;
 }
-    // int max_idle;
-    // // Maximum number of connections allocated by the pool at a given time
-    // int max_active;
-    // int64_t idle_timeout_ms;
-    // int64_t max_conn_life_time;
 
 TEST(cloredis, idle_timeout_ms) {
     std::string host     = Config::instance()->getString("redis.host");
@@ -198,6 +194,37 @@ TEST(cloredis, max_conn_life_time) {
 }
 
 TEST(cloredis, slave_test) {
+    std::string host     = Config::instance()->getString("redis.host");
+    std::string slave_host = Config::instance()->getString("redis.slave_host"); 
+    int32_t timeout      = Config::instance()->getInt32("redis.timeout");
+    std::string password = Config::instance()->getString("redis.password");
+
+    RedisManager* manager = new RedisManager();
+    ASSERT_TRUE(manager->InitEx(host, slave_host, password, timeout));
+    ASSERT_EQ(2, manager->slave_cnt());
+    {
+        RedisConnection conn1 = manager->Get(3);
+        ASSERT_TRUE(conn1);
+        ASSERT_TRUE(conn1->Do("SET k1 10").ok());
+        RedisConnection conn2 = manager->Get(3, NULL, SLAVE);
+        ASSERT_TRUE(conn2);
+        ASSERT_FALSE(conn2->Do("SET k1 10").ok());
+    }
+    ASSERT_EQ(2, manager->ConnectionInPool(SLAVE));
+    ASSERT_EQ(2, manager->ConnectionInPool(MASTER));
+    sleep(4);
+    {
+        RedisConnection conn3 = manager->Get(3, NULL, SLAVE, 0);
+        ASSERT_TRUE(conn3);
+        ASSERT_EQ("10", conn3->Do("GET k1").toString());
+        ASSERT_EQ(10,   conn3->Do("GET k1").toInt32());
+
+        RedisConnection conn4 = manager->Get(3, NULL, SLAVE, 1);
+        ASSERT_TRUE(conn4);
+        ASSERT_EQ("10", conn4->Do("GET k1").toString());
+        ASSERT_EQ(10,   conn4->Do("GET k1").toInt32());
+    }
+    delete manager;
 }
 
 int main(int argc, char** argv) {
