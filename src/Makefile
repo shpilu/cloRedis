@@ -19,6 +19,7 @@ GCC=cc
 CXX=g++
 
 TEST_BIN=cloredis_test
+TUTORIAL_BIN=tutorial
 CLOREDIS_SONAME=$(shell grep CLOREDIS_SONAME cloredis.h | awk '{print $$3}')
 MAJOR_VERSION=$(shell grep CLOREDIS_MAJOR cloredis.h | awk '{print $$3}')
 MINOR_VERSION=$(shell grep CLOREDIS_MINOR cloredis.h | awk '{print $$3}')
@@ -52,18 +53,27 @@ DYLIB_NAME=$(CLOREDIS_SONAME).$(DYLIBSUFFIX)
 STLIB_NAME=$(CLOREDIS_SONAME).$(STLIBSUFFIX)										
 
 TEST_SRC=$(wildcard googletest/*.cc)
+TUTORIAL_SRC=$(wildcard example/*.cc)
+
 TEST_OBJECTS=$(TEST_SRC:%.cc=%.o)
+TUTORIAL_OBJECTS=$(TUTORIAL_SRC:%.cc=%.o)
+
 SOURCES=$(wildcard *.cc internal/*.cc) 
 OBJECTS=$(SOURCES:%.cc=%.o)
 HIREDIS_SRC=$(wildcard hiredis/*.c)
 HIREDIS_OBJS=$(HIREDIS_SRC:%.c=%.o)
 
-all: $(DYLIB_MINOR_NAME) $(STLIB_NAME) $(TEST_BIN)
+all: $(DYLIB_MINOR_NAME) $(STLIB_NAME) $(TEST_BIN) ${TUTORIAL_BIN}
 	mv $(TEST_BIN) ../bin/  
+	mv $(TUTORIAL_BIN) ../bin/  
 	@echo "All done ===="
 
 $(TEST_BIN):$(OBJECTS) $(TEST_OBJECTS) $(HIREDIS_OBJS)
 	$(CXX) $^ -o $@ $(LDFLAGS) $(LDYNAMICS) ${TEST_SPEC_LD}
+
+$(TUTORIAL_BIN):$(OBJECTS) $(TUTORIAL_OBJECTS) $(HIREDIS_OBJS)
+	$(CXX) $^ -o $@ $(LDFLAGS) $(LDYNAMICS) ${TEST_SPEC_LD}
+
 
 $(DYLIB_MINOR_NAME):$(OBJECTS) $(HIREDIS_OBJS)
 	$(CXX) -o $@ $^ -shared -Wl,-soname,$(DYLIB_MAJOR_NAME) $(LDFLAGS) $(LDYNAMICS) 
@@ -75,6 +85,9 @@ $(HIREDIS_OBJS):%.o:%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
 	
 $(TEST_OBJECTS):%.o:%.cc
+	$(CXX) $(INCLUDES) $(CXXFLAGS_ALL) -c $< -o $@
+
+$(TUTORIAL_OBJECTS):%.o:%.cc
 	$(CXX) $(INCLUDES) $(CXXFLAGS_ALL) -c $< -o $@
 
 $(OBJECTS):%.o:%.cc
@@ -90,6 +103,6 @@ install:$(DYLIB_MINOR_NAME) $(STLIB_NAME)
 	@echo "All done ===="
 
 clean:
-	-rm -f $(TEST_OBJECTS) $(OBJECTS) $(HIREDIS_OBJS) $(STLIB_NAME) $(DYLIB_MINOR_NAME)  
+	-rm -f $(TEST_OBJECTS) ${TUTORIAL_OBJECTS} $(OBJECTS) $(HIREDIS_OBJS) $(STLIB_NAME) $(DYLIB_MINOR_NAME)  
 
 .PHONY: all install clean

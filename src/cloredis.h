@@ -7,6 +7,7 @@
 #ifndef CLORIS_CLOREDIS_H_
 #define CLORIS_CLOREDIS_H_
 
+#include <vector>
 #include "connection.h"
 
 #define MAX_DB_NUM 16
