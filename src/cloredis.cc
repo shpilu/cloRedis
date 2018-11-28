@@ -37,6 +37,7 @@ RedisManager::RedisManager()
       slave_cnt_(0) {
     cLog(TRACE, "RedisManager constructor ");
     memset(master_, 0, sizeof(RedisConnectionPool*) * MAX_DB_NUM);
+    memset(slave_, 0, sizeof(RedisConnectionPool**) * MAX_DB_NUM);
 }
 
 RedisManager::~RedisManager() {
@@ -49,14 +50,12 @@ void RedisManager::Flush() {
         if (master_[i]) {
             delete master_[i];
         }
-        /*
         if (slave_[i]) {
             for (int j = 0; j < slave_cnt_; ++j) {
                 delete slave_[i][j];
             }
             free(slave_[i]);
         }
-        */
     }
     inited_ = false;
 }
@@ -103,13 +102,12 @@ bool RedisManager::Init(const std::string& host,
     return conn ? true : false;
 }
 
-/*
 bool RedisManager::InitEx(const std::string& master_host, 
                const std::string& slave_hosts, 
-               const std::string& password = "", 
-               int timeout_ms = DEFAULT_TIMEOUT_MS,
-               ConnectionPoolOption* option = NULL,
-               std::string* err_msg = NULL) {
+               const std::string& password, 
+               int timeout_ms,
+               ConnectionPoolOption* option,
+               std::string* err_msg) {
     if (inited_) {
         if (err_msg) {
             *err_msg = ERR_REENTERING;
@@ -124,31 +122,52 @@ bool RedisManager::InitEx(const std::string& master_host,
         }
         return false;
     }
-    InitHandler handler = std::bind(&RedisConnectionImpl::Connect, std::placeholders::_1, 
-            master_address_vec[0].host, 
-            master_address_vec[0].port, 
-            timeout_ms);
 
-    master_[0] = new RedisConnectionPool(handler);
+    master_addr_ = master_address_vec[0];
+    if (option) {
+        option_ = *option;
+    }
+    password_ = password;
+    timeout_ms_ = timeout_ms;
 
-    std::vector<RedisAddress> slave_address_vec = parse_address_vector(slave_hosts);
-    if (slave_address_vec.size() < 1) {
-        return true;
-    }
-    slave_ = (RedisConnectionPool**)malloc(sizeof(RedisConnectionPool*) * slave_address_vec.size());
-    if (!slave_) {
-        return false;
-    }
-    for (int i = 0; i < slave_address_vec.size(); ++i) {
-        slave_[i] = new RedisConnectionPool();
-        ++slave_cnt_;
-        if (!slave_[i]->Init(slave_address_vec[i].host, slave_address_vec[i].port, timeout_ms, option, err_msg)) {
-            return false;
+    // slave is optional
+    std::vector<ServiceAddress> slave_address_vec = parse_address_vector(slave_hosts);
+    if (slave_address_vec.size() > 0 && slave_address_vec.size() < MAX_SLAVE_CNT) {
+        for (auto &p : slave_address_vec) {
+            slave_addr_.push_back(p);
         }
     }
-    return true;
+    slave_cnt_ = slave_addr_.size();
+
+    int msize = sizeof(RedisConnectionPool*) * slave_addr_.size();
+    slave_[DEFAULT_DB] = (RedisConnectionPool**)malloc(msize);
+    memset(slave_[DEFAULT_DB], 0, msize); 
+    if (!slave_) {
+        if (err_msg) {
+            *err_msg = "malloc failed";
+        }
+        return false;
+    }
+
+    RedisConnectionPool::InitHandler master_handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+            master_addr_.host, 
+            master_addr_.port, 
+            password_,
+            timeout_ms_, DEFAULT_DB);
+    master_[DEFAULT_DB] = new RedisConnectionPool(&option_, master_handler);
+
+    RedisConnectionPool::InitHandler slave_handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+            slave_addr_[0].host, 
+            slave_addr_[0].port, 
+            password_,
+            timeout_ms_, DEFAULT_DB);
+    slave_[DEFAULT_DB][0] = new RedisConnectionPool(&option_, slave_handler);
+
+    RedisConnection master_conn = master_[DEFAULT_DB]->Get(err_msg);
+    RedisConnection slave_conn = slave_[DEFAULT_DB][0]->Get(err_msg);
+
+    return (master_conn && slave_conn) ? true : false;
 }
-*/
 
 RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole role, int index) {
     // TODO delete it
@@ -157,34 +176,36 @@ RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole r
     if (db >= MAX_DB_NUM) {
         return NULL;
     }
-    if (master_[db]) {
-        return master_[db]->Get(err_msg);
-    } else {
-        RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
-                master_addr_.host, 
-                master_addr_.port, 
-                password_,
-                timeout_ms_, db);
-        master_[db] = new RedisConnectionPool(&option_, handler);
-        return master_[db]->Get(err_msg);
-    }
-
-    /*
-    if (role == MASTER) {
+    
+    // if no slave instance exists, role is ignored
+    if ((role == MASTER) || (slave_cnt_ < 1)) {
         if (master_[db]) {
-            return master_[db]->Get();
+            return master_[db]->Get(err_msg);
         } else {
-            return NULL;
+            RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+                    master_addr_.host, 
+                    master_addr_.port, 
+                    password_,
+                    timeout_ms_, 
+                    db);
+            master_[db] = new RedisConnectionPool(&option_, handler);
+            return master_[db]->Get(err_msg);
         }
     } else {
-        if (slave_ ) {
-            int real_index = (index >= 0 && index < slave_cnt_) ? index : (rand() % slave_cnt_);
-            return slave_[real_index]->Get(db);
+        int real_index = (index >= 0 && index < slave_cnt_) ? index : (rand() % slave_cnt_);
+        if (slave_[db][real_index]) {
+            return slave_[db][real_index]->Get(err_msg);
         } else {
-            return NULL;
+            RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+                    slave_addr_[real_index].host, 
+                    slave_addr_[real_index].port, 
+                    password_,
+                    timeout_ms_, 
+                    db);
+            slave_[db][real_index] = new RedisConnectionPool(&option_, handler);
+            return slave_[db][real_index]->Get(err_msg);
         }
     }
-    */
 }
 
 } // namespace cloris
