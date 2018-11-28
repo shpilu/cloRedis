@@ -4,6 +4,7 @@
 //
 
 #include <gtest/gtest.h>
+#include "internal/log.h"
 #include "config.h"
 #include "cloredis.h"
 
@@ -16,10 +17,11 @@ timeout=1000\n\
 password=cloris520 \n\
 ";
 
-TEST(cloredis, test1) {
+TEST(cloredis, startup) {
     std::string host     = Config::instance()->getString("redis.host");
     int32_t timeout      = Config::instance()->getInt32("redis.timeout");
     std::string password = Config::instance()->getString("redis.password");
+    cLog(INFO, "[TEST_BEGIN]host=%s, timeout=%d, password=%s", host.c_str(), timeout, password.c_str());
 
     RedisManager* manager = RedisManager::instance();
     ASSERT_TRUE(manager->Init(host, password, timeout));

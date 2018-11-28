@@ -23,7 +23,6 @@ public:
     RedisReply();
     RedisReply(redisReply* reply, bool reclaim, ERR_STATE state, const char* err_msg);
     ~RedisReply();
-    void Update(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg); 
 
     ERR_STATE err_state() const { return err_state_; }
     bool error() const; 
@@ -38,8 +37,9 @@ public:
     bool is_int() const;
     bool is_array() const;
     size_t size() const;
-
     RedisReplyPtr operator[](size_t index);
+protected:
+    void Update(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg); 
 private:
     void UpdateErrMsg(const char* err_msg); 
     char err_str_[REDIS_ERRSTR_LEN]; //

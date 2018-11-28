@@ -5,7 +5,9 @@
 
 namespace cloris {
 
-RedisReply::RedisReply() {
+RedisReply::RedisReply()
+    : reply_(NULL),
+      reclaim_(true) {
     cLog(TRACE, "RedisReply constructor..."); 
     Update(NULL, true, STATE_ERROR_INVOKE, NULL); 
 }
@@ -23,6 +25,9 @@ RedisReply::~RedisReply() {
 }
 
 void RedisReply::UpdateErrMsg(const char* err_msg) {
+    if (!err_msg) {
+        return;
+    }
     size_t len = strlen(err_msg);
     len = (len < sizeof(err_str_)) ? len : (sizeof(err_str_) - 1);
     memcpy(err_str_, err_msg, len);

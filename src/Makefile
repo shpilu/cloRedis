@@ -6,7 +6,10 @@
 # * hiredis has been packed into cloredis, so you don't need to install hiredis independently
 # * Cloredis will install in /usr/local/ directory by default
 # * You can change installation directory by run 'make install PREFIX=$(YOUR_DIR)'
-# * For cloredis internal test, use 'make DEFINE=-DUSE_DEBUG'
+#
+# compile command:
+# make -- normal compilation
+# make DEFINE=-DUSE_DEBUG -- For cloredis internal test
 #
 PREFIX?=/usr/local
 INCLUDE_PATH?=include/cloredis
