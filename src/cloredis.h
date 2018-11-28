@@ -52,6 +52,7 @@ public:
     int ActiveConnectionCount(RedisRole role = MASTER);
     int ConnectionInUse(RedisRole role = MASTER);
     int ConnectionInPool(RedisRole role = MASTER);
+    int slave_cnt() const { return slave_cnt_; }
 private:
     ServiceAddress master_addr_;
     std::vector<ServiceAddress> slave_addr_;

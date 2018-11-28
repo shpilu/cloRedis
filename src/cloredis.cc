@@ -196,7 +196,7 @@ RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole r
         }
     } else {
         int real_index = (index >= 0 && index < slave_cnt_) ? index : (rand() % slave_cnt_);
-        if (slave_[db][real_index]) {
+        if (slave_[db] && slave_[db][real_index]) {
             return slave_[db][real_index]->Get(err_msg);
         } else {
             RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
@@ -205,6 +205,11 @@ RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole r
                     password_,
                     timeout_ms_, 
                     db);
+            if (!slave_[db]) {
+                int msize = sizeof(RedisConnectionPool*) * slave_addr_.size();
+                slave_[db] = (RedisConnectionPool**)malloc(msize);
+                memset(slave_[db], 0, msize); 
+            }
             slave_[db][real_index] = new RedisConnectionPool(&option_, handler);
             return slave_[db][real_index]->Get(err_msg);
         }
@@ -222,7 +227,9 @@ int RedisManager::ActiveConnectionCount(RedisRole role) {
     } else {
         for (int i = 0; i < MAX_DB_NUM; ++i) {
             for (int j = 0; j < slave_cnt_; ++j) {
-                count += slave_[i][j]->active_cnt();
+                if (slave_[i] && slave_[i][j]) {
+                    count += slave_[i][j]->active_cnt();
+                }
             }
         }
     }
@@ -240,7 +247,9 @@ int RedisManager::ConnectionInPool(RedisRole role) {
     } else {
         for (int i = 0; i < MAX_DB_NUM; ++i) {
             for (int j = 0; j < slave_cnt_; ++j) {
-                count += slave_[i][j]->conn_in_pool();
+                if (slave_[i] && slave_[i][j]) {
+                    count += slave_[i][j]->conn_in_pool();
+                }
             }
         }
     }
