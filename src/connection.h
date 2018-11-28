@@ -1,6 +1,9 @@
 //
-// cloRedis connection header file
-// Copyright 2018 James Wei (weijianlhp@163.com)
+// cloRedis connection class definition 
+// class RedisConnectionImpl is an abstract of redis connection and response
+// class RedisConnection is like an 'unique_ptr' to RedisConnectionImpl
+// version: 1.0 
+// Copyright (C) 2018 James Wei (weijianlhp@163.com). All rights reserved
 //
 
 #ifndef CLORIS_CLOREDIS_CONNECTION_H_
@@ -17,6 +20,7 @@
 #define ERR_BAD_HOST    "bad host format"
 #define ERR_BAD_CONNECTION  "bad redis connection"
 #define ERR_REPLY_NULL  "redisReply object is NULL"
+#define ERR_MALLOC_ERROR "memory malloc error"
 
 class redisContext;
 

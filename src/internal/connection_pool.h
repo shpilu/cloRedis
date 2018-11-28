@@ -1,7 +1,6 @@
 // 
-// Generic pool implementation
-// with support for both connection pool and memory pool
-// multithread-safe
+// Generic connection pool implementation
+// with characteristic of both connection pool and memory pool, and thread-safe 
 // Copyright (c) 2017 James Wei (weijianlhp@163.com). All rights reserved.
 //
 

@@ -1,3 +1,10 @@
+//
+// cloRedis reply class definition
+// RedisReply is an encapsulation of redisReply struct in hiredis
+// version: 1.0 
+// Copyright (C) 2018 James Wei (weijianlhp@163.com). All rights reserved
+//
+
 #ifndef CLORIS_REDIS_REPLY_H_
 #define CLORIS_REDIS_REPLY_H_
 

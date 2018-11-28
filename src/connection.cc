@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2018 James Wei (weijianlhp@163.com). All rights reserved.
-// Cloredis core implementation
+// cloRedis connection class implementation 
+// version: 1.0 
+// Copyright (C) 2018 James Wei (weijianlhp@163.com). All rights reserved
 //
-// ChangeLog:
-// 2018-04-20  Created
 
 #include <boost/algorithm/string.hpp>
 #include <sstream>

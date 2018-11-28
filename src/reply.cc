@@ -1,3 +1,10 @@
+//
+// cloRedis reply class implementation 
+// RedisReply is an encapsulation of redisReply struct in hiredis
+// version: 1.0 
+// Copyright (C) 2018 James Wei (weijianlhp@163.com). All rights reserved
+//
+
 #include <string.h>
 #include <memory>
 #include "internal/log.h"

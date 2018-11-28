@@ -1,3 +1,8 @@
+//
+// cloRedis manager class implementation 
+// version: 1.0 
+// Copyright (C) 2018 James Wei (weijianlhp@163.com). All rights reserved
+//
 
 #include <vector>
 #include <boost/algorithm/string.hpp>
@@ -64,6 +69,32 @@ RedisManager* RedisManager::instance() {
     return Singleton<RedisManager>::instance();
 }
 
+void RedisManager::InitConnectionPool(RedisRole role, int db, int slave_slot) {
+    RedisConnectionPool::InitHandler handler; 
+    if (role == MASTER) {
+        handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+                master_addr_.host, 
+                master_addr_.port, 
+                password_,
+                timeout_ms_, 
+                db);
+        master_[db] = new RedisConnectionPool(&option_, handler);
+    } else {
+        handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+                slave_addr_[slave_slot].host, 
+                slave_addr_[slave_slot].port, 
+                password_,
+                timeout_ms_, 
+                db);
+        if (!slave_[db]) {
+            int msize = sizeof(RedisConnectionPool*) * slave_addr_.size();
+            slave_[db] = (RedisConnectionPool**)malloc(msize);
+            memset(slave_[db], 0, msize); 
+        }
+        slave_[db][slave_slot] = new RedisConnectionPool(&option_, handler);
+    }
+}
+
 bool RedisManager::Init(const std::string& host, 
              const std::string& password, 
              int timeout_ms, 
@@ -92,13 +123,7 @@ bool RedisManager::Init(const std::string& host,
     password_ = password;
     timeout_ms_ = timeout_ms;
 
-    RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
-            master_addr_.host, 
-            master_addr_.port, 
-            password_,
-            timeout_ms_, DEFAULT_DB);
-    master_[DEFAULT_DB] = new RedisConnectionPool(&option_, handler);
-
+    InitConnectionPool(MASTER, DEFAULT_DB, 0);
     RedisConnection conn = master_[DEFAULT_DB]->Get(err_msg);
     cLogIf(!conn, ERROR, err_msg ? err_msg->c_str() : "");
 
@@ -142,33 +167,10 @@ bool RedisManager::InitEx(const std::string& master_host,
     }
     slave_cnt_ = slave_addr_.size();
 
-    int msize = sizeof(RedisConnectionPool*) * slave_addr_.size();
-    slave_[DEFAULT_DB] = (RedisConnectionPool**)malloc(msize);
-    memset(slave_[DEFAULT_DB], 0, msize); 
-    if (!slave_) {
-        if (err_msg) {
-            *err_msg = "malloc failed";
-        }
-        return false;
-    }
-
-    RedisConnectionPool::InitHandler master_handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
-            master_addr_.host, 
-            master_addr_.port, 
-            password_,
-            timeout_ms_, DEFAULT_DB);
-    master_[DEFAULT_DB] = new RedisConnectionPool(&option_, master_handler);
-
-    RedisConnectionPool::InitHandler slave_handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
-            slave_addr_[0].host, 
-            slave_addr_[0].port, 
-            password_,
-            timeout_ms_, DEFAULT_DB);
-    slave_[DEFAULT_DB][0] = new RedisConnectionPool(&option_, slave_handler);
-
+    InitConnectionPool(MASTER, DEFAULT_DB, 0);
+    InitConnectionPool(SLAVE, DEFAULT_DB, 0);
     RedisConnection master_conn = master_[DEFAULT_DB]->Get(err_msg);
     RedisConnection slave_conn = slave_[DEFAULT_DB][0]->Get(err_msg);
-
     return (master_conn && slave_conn) ? true : false;
 }
 
@@ -185,13 +187,7 @@ RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole r
         if (master_[db]) {
             return master_[db]->Get(err_msg);
         } else {
-            RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
-                    master_addr_.host, 
-                    master_addr_.port, 
-                    password_,
-                    timeout_ms_, 
-                    db);
-            master_[db] = new RedisConnectionPool(&option_, handler);
+            InitConnectionPool(MASTER, db, 0);
             return master_[db]->Get(err_msg);
         }
     } else {
@@ -199,18 +195,7 @@ RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole r
         if (slave_[db] && slave_[db][real_index]) {
             return slave_[db][real_index]->Get(err_msg);
         } else {
-            RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
-                    slave_addr_[real_index].host, 
-                    slave_addr_[real_index].port, 
-                    password_,
-                    timeout_ms_, 
-                    db);
-            if (!slave_[db]) {
-                int msize = sizeof(RedisConnectionPool*) * slave_addr_.size();
-                slave_[db] = (RedisConnectionPool**)malloc(msize);
-                memset(slave_[db], 0, msize); 
-            }
-            slave_[db][real_index] = new RedisConnectionPool(&option_, handler);
+            InitConnectionPool(SLAVE, db, real_index);
             return slave_[db][real_index]->Get(err_msg);
         }
     }

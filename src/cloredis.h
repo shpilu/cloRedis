@@ -1,6 +1,7 @@
 //
-// cloRedis  
-// Copyright 2018 James Wei (weijianlhp@163.com)
+// cloRedis manager class definition
+// version: 1.0 
+// Copyright (C) 2018 James Wei (weijianlhp@163.com). All rights reserved
 //
 
 #ifndef CLORIS_CLOREDIS_H_
@@ -45,7 +46,7 @@ public:
                    int timeout_ms = DEFAULT_TIMEOUT_MS,
                    ConnectionPoolOption* option = NULL,
                    std::string* err_msg = NULL); 
-    RedisConnectionImpl* Get(int db, std::string* err_msg = NULL, RedisRole role = MASTER, int index = -1);
+    RedisConnectionImpl* Get(int db = DEFAULT_DB, std::string* err_msg = NULL, RedisRole role = MASTER, int index = -1);
     void Flush();
 
     // TODO
@@ -54,6 +55,8 @@ public:
     int ConnectionInPool(RedisRole role = MASTER);
     int slave_cnt() const { return slave_cnt_; }
 private:
+    void InitConnectionPool(RedisRole role, int db, int slave_slot);
+
     ServiceAddress master_addr_;
     std::vector<ServiceAddress> slave_addr_;
     ConnectionPoolOption option_;
