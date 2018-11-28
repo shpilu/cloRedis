@@ -70,6 +70,7 @@ bool RedisManager::Init(const std::string& host,
              ConnectionPoolOption* option, 
              std::string *err_msg) {
     if (inited_) {
+        cLog(ERROR, ERR_REENTERING);
         if (err_msg) {
             *err_msg = ERR_REENTERING;
         }
@@ -78,6 +79,7 @@ bool RedisManager::Init(const std::string& host,
     inited_ = true;
     std::vector<ServiceAddress> address_vec = parse_address_vector(host);
     if (address_vec.size() != 1) {
+        cLog(ERROR, ERR_BAD_HOST);
         if (err_msg) {
             *err_msg = ERR_BAD_HOST;
         }
@@ -98,6 +100,7 @@ bool RedisManager::Init(const std::string& host,
     master_[DEFAULT_DB] = new RedisConnectionPool(&option_, handler);
 
     RedisConnection conn = master_[DEFAULT_DB]->Get(err_msg);
+    cLogIf(!conn, ERROR, err_msg ? err_msg->c_str() : "");
 
     return conn ? true : false;
 }
@@ -206,6 +209,46 @@ RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole r
             return slave_[db][real_index]->Get(err_msg);
         }
     }
+}
+
+int RedisManager::ActiveConnectionCount(RedisRole role) {
+    int count = 0;
+    if (role == MASTER) {
+        for (int i = 0; i < MAX_DB_NUM; ++i) {
+            if (master_[i]) {
+                count += master_[i]->active_cnt();
+            }
+        }
+    } else {
+        for (int i = 0; i < MAX_DB_NUM; ++i) {
+            for (int j = 0; j < slave_cnt_; ++j) {
+                count += slave_[i][j]->active_cnt();
+            }
+        }
+    }
+    return count;
+}
+
+int RedisManager::ConnectionInPool(RedisRole role) {
+    int count = 0;
+    if (role == MASTER) {
+        for (int i = 0; i < MAX_DB_NUM; ++i) {
+            if (master_[i]) {
+                count += master_[i]->conn_in_pool();
+            }
+        }
+    } else {
+        for (int i = 0; i < MAX_DB_NUM; ++i) {
+            for (int j = 0; j < slave_cnt_; ++j) {
+                count += slave_[i][j]->conn_in_pool();
+            }
+        }
+    }
+    return count;
+}
+
+int RedisManager::ConnectionInUse(RedisRole role) {
+    return ActiveConnectionCount(role) - ConnectionInPool(role);
 }
 
 } // namespace cloris

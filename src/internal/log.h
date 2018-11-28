@@ -13,8 +13,14 @@
 #ifdef USE_DEBUG 
     #define cLog(level, format, ...) \
         FormatOutput("CLORIS", level, __FILE__, __LINE__, format, ##__VA_ARGS__)
+    #define cLogIf(cond, level, format, ...) \
+        do {  \
+            if (cond) { FormatOutput("CLORIS", level, __FILE__, __LINE__, format, ##__VA_ARGS__); } \
+        } while (0) 
 #else 
     #define cLog(level, format, ...) \
+        void(0)
+    #define cLogIf(cond, level, format, ...) \
         void(0)
 #endif
 

@@ -57,7 +57,7 @@ public:
     ~RedisConnection();
 
     // cast RedisConnection to bool type
-    operator bool() { return impl_ ? true : false; }
+    operator bool() const { return impl_ ? true : false; }
     RedisConnection& operator=(RedisConnectionImpl* connection);
     RedisConnectionImpl* operator->();
     RedisConnectionImpl& operator*();

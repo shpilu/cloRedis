@@ -49,8 +49,9 @@ public:
     void Flush();
 
     // TODO
-    int conn_in_use() { return 0; }
-    int conn_in_pool() { return 0; }
+    int ActiveConnectionCount(RedisRole role = MASTER);
+    int ConnectionInUse(RedisRole role = MASTER);
+    int ConnectionInPool(RedisRole role = MASTER);
 private:
     ServiceAddress master_addr_;
     std::vector<ServiceAddress> slave_addr_;

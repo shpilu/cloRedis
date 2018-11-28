@@ -128,7 +128,6 @@ struct ConnectionPoolOption {
       }
 
     int max_idle;
-
     // Maximum number of connections allocated by the pool at a given time
     int max_active;
     int64_t idle_timeout_ms;
@@ -159,6 +158,9 @@ public:
     ~ConnectionPool(); 
     Type* Get(std::string* err_msg = NULL);
     void Put(Type* type);
+
+    int conn_in_pool() const { return idle_.count; }
+    int active_cnt() const {  return active_cnt_; }
 
 private:
     Type* GetNewInstance();
