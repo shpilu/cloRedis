@@ -65,6 +65,8 @@ int32_t RedisReply::toInt32() const {
     if (reply_) {
         if (reply_->type == REDIS_REPLY_INTEGER) {
             value = reply_->integer;
+        } else if (reply_->type == REDIS_REPLY_STRING) {
+            value = atoi(reply_->str);
         }
     }
     return value;
@@ -75,6 +77,8 @@ int64_t RedisReply::toInt64() const {
     if (reply_) {
         if (reply_->type == REDIS_REPLY_INTEGER) {
             value = reply_->integer;
+        } else if (reply_->type == REDIS_REPLY_STRING) {
+            value = atol(reply_->str);
         }
     }
     return value;
