@@ -14,6 +14,8 @@
 
 namespace cloris {
 
+RedisConnectionImpl RedisConnection::dummy_conn_impl(NULL);
+
 RedisConnectionImpl::RedisConnectionImpl(RedisConnectionPool* pool) 
     : RedisReply(), 
       redis_context_(NULL),
@@ -48,7 +50,7 @@ bool RedisConnectionImpl::Connect(const std::string& host, int port, const std::
     }
     redis_context_ = redisConnectWithTimeout(host.c_str(), port, timeout);
     if (!redis_context_) {
-        this->Update(NULL, true, STATE_ERROR_INVOKE, ERR_NO_CONTEXT);
+        this->Update(NULL, true, STATE_ERROR_INVOKE, ERR_BAD_CONNECTION);
         cLog(ERROR, "No memory in creating new request");
         return false;
     }
@@ -83,7 +85,7 @@ RedisConnectionImpl& RedisConnectionImpl::__Do(const char *format, va_list ap) {
     std::string value("");
 
     if (!redis_context_) {
-        this->Update(NULL, true, STATE_ERROR_INVOKE, ERR_NO_CONTEXT);
+        this->Update(NULL, true, STATE_ERROR_INVOKE, ERR_BAD_CONNECTION);
         return *this; 
     }
     redisReply* reply = (redisReply*)redisvCommand(redis_context_, format, ap);
@@ -119,11 +121,19 @@ RedisConnection::~RedisConnection() {
 }
 
 RedisConnectionImpl* RedisConnection::operator->() {
-    return this->impl_;
+    if (impl_) {
+        return this->impl_;
+    } else {
+        return &RedisConnection::dummy_conn_impl;
+    }
 }
 
 RedisConnectionImpl& RedisConnection::operator*() {
-    return *(this->impl_);
+    if (impl_) {
+        return *(this->impl_);
+    } else {
+        return RedisConnection::dummy_conn_impl;
+    }
 }
 
 RedisConnection& RedisConnection::operator=(RedisConnectionImpl* connection) {

@@ -15,7 +15,7 @@
 #define ERR_NOT_INITED  "connection not inited"
 #define ERR_REENTERING  "connect reentering"
 #define ERR_BAD_HOST    "bad host format"
-#define ERR_NO_CONTEXT  "no redisContext object"
+#define ERR_BAD_CONNECTION  "bad redis connection"
 #define ERR_REPLY_NULL  "redisReply object is NULL"
 
 class redisContext;
@@ -33,18 +33,15 @@ class RedisConnectionImpl : public RedisReply {
     friend RedisConnection;
 public:
     static bool Init(void *p, const std::string& host, int port, const std::string& password, int timeout_ms);
-
 	RedisConnectionImpl(RedisConnectionPool*);
     RedisConnectionImpl& Do(const char *format, ...);
     bool Select(int db);
     int db() const { return db_; }
-
 private:
 	~RedisConnectionImpl(); // forbid allocation in the stack
     RedisConnectionImpl& __Do(const char *format, va_list ap);
     bool Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout); 
     void Done();
-
     RedisConnectionImpl() = delete;
     RedisConnectionImpl(const RedisConnectionImpl&) = delete;
     RedisConnectionImpl& operator=(const RedisConnectionImpl&) = delete;
@@ -57,6 +54,7 @@ private:
 
 // RedisConnection: guard of RedisConnectionImpl
 class RedisConnection {
+    static RedisConnectionImpl dummy_conn_impl;
 public:
     RedisConnection(RedisConnectionImpl* conn) : impl_(conn) { }
     ~RedisConnection();
