@@ -31,7 +31,9 @@ static std::vector<ServiceAddress> parse_address_vector(const std::string& host)
 }
 
 RedisManager::RedisManager() 
-    : inited_(false),
+    : password_(""),
+      timeout_ms_(-1),
+      inited_(false),
       slave_cnt_(0) {
     cLog(TRACE, "RedisManager constructor ");
     memset(master_, 0, sizeof(RedisConnectionPool*) * MAX_DB_NUM);
@@ -82,12 +84,19 @@ bool RedisManager::Init(const std::string& host,
         }
         return false;
     }
+    master_addr_ = address_vec[0];
+    if (option) {
+        option_ = *option;
+    }
+    password_ = password;
+    timeout_ms_ = timeout_ms;
+
     RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
-            address_vec[0].host, 
-            address_vec[0].port, 
-            password,
-            timeout_ms);
-    master_[DEFAULT_DB] = new RedisConnectionPool(option, handler);
+            master_addr_.host, 
+            master_addr_.port, 
+            password_,
+            timeout_ms_, DEFAULT_DB);
+    master_[DEFAULT_DB] = new RedisConnectionPool(&option_, handler);
 
     RedisConnection conn = master_[DEFAULT_DB]->Get(err_msg);
 
@@ -151,7 +160,13 @@ RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole r
     if (master_[db]) {
         return master_[db]->Get(err_msg);
     } else {
-        return NULL;
+        RedisConnectionPool::InitHandler handler = std::bind(&RedisConnectionImpl::Init, std::placeholders::_1, 
+                master_addr_.host, 
+                master_addr_.port, 
+                password_,
+                timeout_ms_, db);
+        master_[db] = new RedisConnectionPool(&option_, handler);
+        return master_[db]->Get(err_msg);
     }
 
     /*

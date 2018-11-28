@@ -32,15 +32,13 @@ class RedisConnectionImpl : public RedisReply {
     friend IdleList<RedisConnectionImpl>;
     friend RedisConnection;
 public:
-    static bool Init(void *p, const std::string& host, int port, const std::string& password, int timeout_ms);
+    static bool Init(void *p, const std::string& host, int port, const std::string& password, int timeout_ms, int db);
 	RedisConnectionImpl(RedisConnectionPool*);
     RedisConnectionImpl& Do(const char *format, ...);
-    bool Select(int db);
-    int db() const { return db_; }
 private:
 	~RedisConnectionImpl(); // forbid allocation in the stack
     RedisConnectionImpl& __Do(const char *format, va_list ap);
-    bool Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout); 
+    bool Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout, int db); 
     void Done();
     RedisConnectionImpl() = delete;
     RedisConnectionImpl(const RedisConnectionImpl&) = delete;
@@ -49,7 +47,6 @@ private:
 	redisContext* redis_context_;
     RedisConnectionPool* pool_;
     int action_count_;
-    int db_;
 };
 
 // RedisConnection: guard of RedisConnectionImpl

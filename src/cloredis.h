@@ -53,6 +53,10 @@ public:
     int conn_in_use() { return 0; }
     int conn_in_pool() { return 0; }
 private:
+    ServiceAddress master_addr_;
+    ConnectionPoolOption option_;
+    std::string password_;
+    int timeout_ms_;
     bool inited_;
     int  slave_cnt_;
     RedisConnectionPool *master_[MAX_DB_NUM];

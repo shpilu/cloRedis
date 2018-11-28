@@ -20,8 +20,7 @@ RedisConnectionImpl::RedisConnectionImpl(RedisConnectionPool* pool)
     : RedisReply(), 
       redis_context_(NULL),
       pool_(pool),
-      action_count_(0),
-      db_(0) {
+      action_count_(0) {
 }
 
 RedisConnectionImpl::~RedisConnectionImpl() {
@@ -32,7 +31,7 @@ RedisConnectionImpl::~RedisConnectionImpl() {
 } 
 
 void RedisConnectionImpl::Done() {
-    cLog(DEBUG, "Reclaim connection, id=%d", this->db_);
+    cLog(DEBUG, "Reclaim connection");
     Update(NULL, true, STATE_ERROR_INVOKE, NULL); 
     if (pool_) {
         pool_->Put(this);
@@ -42,7 +41,7 @@ void RedisConnectionImpl::Done() {
     return;
 }
 
-bool RedisConnectionImpl::Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout) {
+bool RedisConnectionImpl::Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout, int db) {
     if (redis_context_) {
         this->Update(NULL, true, STATE_ERROR_INVOKE, ERR_REENTERING);
         cLog(ERROR, "internal implementation bug, redis_context is not NULL in 'Connect'");
@@ -63,13 +62,14 @@ bool RedisConnectionImpl::Connect(const std::string& host, int port, const std::
         return true;
     }
     this->Do("AUTH %s", password.c_str());
+    this->Do("SELECT %d", db);
     return this->ok();
 }
 
-bool RedisConnectionImpl::Init(void *p, const std::string& host, int port, const std::string& password, int timeout_ms) {
+bool RedisConnectionImpl::Init(void *p, const std::string& host, int port, const std::string& password, int timeout_ms, int db) {
     RedisConnectionImpl* obj = static_cast<RedisConnectionImpl*>(p);
     struct timeval timeout = { timeout_ms / 1000, (timeout_ms % 1000) * 1000 };
-    return obj->Connect(host, port, password, timeout);
+    return obj->Connect(host, port, password, timeout, db);
 }
 
 RedisConnectionImpl& RedisConnectionImpl::Do(const char *format, ...) {
@@ -100,17 +100,6 @@ RedisConnectionImpl& RedisConnectionImpl::__Do(const char *format, va_list ap) {
         this->Update(NULL, true, STATE_ERROR_INVOKE, ERR_REPLY_NULL);
     }
     return *this;
-}
-
-// special for 'select' command
-bool RedisConnectionImpl::Select(int db) {
-    ++this->action_count_;
-    this->Do("SELECT %d", db);
-    bool ok = this->ok();
-    if (ok) {
-        this->db_ = db;
-    }
-    return ok;
 }
 
 RedisConnection::~RedisConnection() {
