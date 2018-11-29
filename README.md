@@ -6,7 +6,9 @@ Cloredis is a simple, high-performance C++ Client for Redis with native support 
 The design of cloredis references, integrates and takes advantage of many leading Redis Client in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
 
 * [Features](#features)
-
+* [Usage](#usage)
+* [Installation](#installation)
+* [API Reference](#reference)
 ## Features<div id="features"></div>
 
 * Support connection pool and memory pool naturally -- All connection operations are based on connection pool.
@@ -15,7 +17,7 @@ The design of cloredis references, integrates and takes advantage of many leadin
 
 Cloredis's features make it well adapted for production environment. Now cloredis is used in ofo Inc. and works very well.
 
-## Usage
+## Usage<div id="usage"></div>
 
 Basic usage:
 ``` C++
@@ -53,36 +55,38 @@ RedisManager *manager = RedisManager::instance();
 if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:6381", "cloris520", 100, &option)) {
     std::cout << "init redis manager failed" << std::endl;
 }
-// access redis master instance, you can also write as 'RedisConnection conn1 = manager->Get(5, NULL, MASTER)'
-RedisConnection conn1 = manager->Get(5);
-conn1->Do("NOCOMMAND city %s", "Beijing");
-// use 'ok' or 'error' method to determine whether the command has run success
-// true
-if (conn1->error()) {
-    std::cout << "run command error:" << conn1->err_str() << std::endl;
-} else {
-    std::cout << "run command ok" << std::endl;
-}
-conn1->Do("set tkey 100");
-sleep(5);
-// access redis slave instance
-conn2 = manager->Get(5, NULL, SLAVE);
-std::cout << conn2->Do("GET tkey").toString() << std::endl;
 
+{
+    // access redis master instance, you can also write as 'RedisConnection conn1 = manager->Get(5, NULL, MASTER)'
+    RedisConnection conn1 = manager->Get(5);
+    conn1->Do("NOCOMMAND city %s", "Beijing");
+    // use 'ok' or 'error' method to determine whether the command has run success
+    // true
+    if (conn1->error()) {
+        std::cout << "run command error:" << conn1->err_str() << std::endl;
+    } else {
+        std::cout << "run command ok" << std::endl;
+    }
+    conn1->Do("set tkey 100");
+    sleep(5);
+    // access redis slave instance
+    conn2 = manager->Get(5, NULL, SLAVE);
+    std::cout << conn2->Do("GET tkey").toString() << std::endl;
+}
 ```
 
-## Installation
-
+## Installation<div id="installation"></div>
 On Linux system you can build cloredis compile and runtime environment by running the following commands:
 ``` shell
+# by default, cloredis will install in /usr/local/cloredis
 cd src
 make
-make install
+sudo make install
 ```
-Or you can customize install directory by running command like "make install PREFIX=$TARGET_DIR".  
+Or you can customize install directory by running command "make install PREFIX=$TARGET_DIR".  
 Noteworthy is that hiredis has been intergrated into cloredis, so you do not need to install hiredis separately.
 
-## Document
+## API Reference<div id="reference"></div> 
 
 Comming soon.
 
@@ -93,3 +97,4 @@ Comming soon.
 ## Authors
 
 * James Wei (weijianlhp@163.com)
+Please contact me if you have trouble using cloRedis.
