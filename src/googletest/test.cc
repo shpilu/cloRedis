@@ -4,8 +4,8 @@
 //
 
 #include <gtest/gtest.h>
+#include <cloriconf/config.h>
 #include "internal/log.h"
-#include "config.h"
 #include "cloredis.h"
 
 using namespace cloris;
@@ -19,9 +19,9 @@ password=cloris520 \n\
 ";
 
 TEST(cloredis, basic_test) {
-    std::string host     = Config::instance()->getString("redis.host");
-    int32_t timeout      = Config::instance()->getInt32("redis.timeout");
-    std::string password = Config::instance()->getString("redis.password");
+    std::string host     = Config::instance()->GetString("redis.host");
+    int32_t timeout      = Config::instance()->GetInt32("redis.timeout");
+    std::string password = Config::instance()->GetString("redis.password");
     cLog(INFO, "[TEST_BEGIN]host=%s, timeout=%d, password=%s", host.c_str(), timeout, password.c_str());
 
     RedisManager* manager = RedisManager::instance();
@@ -45,7 +45,7 @@ TEST(cloredis, basic_test) {
     }
 
     ASSERT_EQ(0, manager->ConnectionInUse());
-    ASSERT_EQ(2, manager->ConnectionInPool()); // 2 connections in db0 and db2
+    ASSERT_EQ(2, manager->ConnectionInPool()); // 2 connections in db0 && db2
 
     {
         RedisConnection conn1 = manager->Get(1);
@@ -68,9 +68,9 @@ TEST(cloredis, basic_test) {
 }
 
 TEST(cloredis, max_active_test) {
-    std::string host     = Config::instance()->getString("redis.host");
-    int32_t timeout      = Config::instance()->getInt32("redis.timeout");
-    std::string password = Config::instance()->getString("redis.password");
+    std::string host     = Config::instance()->GetString("redis.host");
+    int32_t timeout      = Config::instance()->GetInt32("redis.timeout");
+    std::string password = Config::instance()->GetString("redis.password");
 
     ConnectionPoolOption option;
     option.max_active = 4;
@@ -99,9 +99,9 @@ TEST(cloredis, max_active_test) {
 }
 
 TEST(cloredis, max_idle_test) {
-    std::string host     = Config::instance()->getString("redis.host");
-    int32_t timeout      = Config::instance()->getInt32("redis.timeout");
-    std::string password = Config::instance()->getString("redis.password");
+    std::string host     = Config::instance()->GetString("redis.host");
+    int32_t timeout      = Config::instance()->GetInt32("redis.timeout");
+    std::string password = Config::instance()->GetString("redis.password");
 
     ConnectionPoolOption option;
     option.max_idle = 3;
@@ -128,9 +128,9 @@ TEST(cloredis, max_idle_test) {
 }
 
 TEST(cloredis, idle_timeout_ms) {
-    std::string host     = Config::instance()->getString("redis.host");
-    int32_t timeout      = Config::instance()->getInt32("redis.timeout");
-    std::string password = Config::instance()->getString("redis.password");
+    std::string host     = Config::instance()->GetString("redis.host");
+    int32_t timeout      = Config::instance()->GetInt32("redis.timeout");
+    std::string password = Config::instance()->GetString("redis.password");
 
     ConnectionPoolOption option;
     option.idle_timeout_ms = 2000;
@@ -157,9 +157,9 @@ TEST(cloredis, idle_timeout_ms) {
 }
 
 TEST(cloredis, max_conn_life_time) {
-    std::string host     = Config::instance()->getString("redis.host");
-    int32_t timeout      = Config::instance()->getInt32("redis.timeout");
-    std::string password = Config::instance()->getString("redis.password");
+    std::string host     = Config::instance()->GetString("redis.host");
+    int32_t timeout      = Config::instance()->GetInt32("redis.timeout");
+    std::string password = Config::instance()->GetString("redis.password");
 
     ConnectionPoolOption option;
     option.max_conn_life_time = 3000;
@@ -194,10 +194,10 @@ TEST(cloredis, max_conn_life_time) {
 }
 
 TEST(cloredis, slave_test) {
-    std::string host     = Config::instance()->getString("redis.host");
-    std::string slave_host = Config::instance()->getString("redis.slave_host"); 
-    int32_t timeout      = Config::instance()->getInt32("redis.timeout");
-    std::string password = Config::instance()->getString("redis.password");
+    std::string host     = Config::instance()->GetString("redis.host");
+    std::string slave_host = Config::instance()->GetString("redis.slave_host"); 
+    int32_t timeout      = Config::instance()->GetInt32("redis.timeout");
+    std::string password = Config::instance()->GetString("redis.password");
 
     RedisManager* manager = new RedisManager();
     ASSERT_TRUE(manager->InitEx(host, slave_host, password, timeout));
@@ -210,7 +210,7 @@ TEST(cloredis, slave_test) {
         ASSERT_TRUE(conn2);
         ASSERT_FALSE(conn2->Do("SET k1 10").ok());
     }
-    ASSERT_EQ(2, manager->ConnectionInPool(SLAVE));
+    ASSERT_EQ(1, manager->ConnectionInPool(SLAVE));
     ASSERT_EQ(2, manager->ConnectionInPool(MASTER));
     sleep(4);
     {
@@ -229,7 +229,7 @@ TEST(cloredis, slave_test) {
 
 int main(int argc, char** argv) {
     // use cloriConf to load config
-    Config::instance()->Load(g_redis_conf, SP_DIRECT);
+    Config::instance()->Load(g_redis_conf, SRC_DIRECT);
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

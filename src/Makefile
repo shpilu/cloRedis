@@ -34,11 +34,11 @@ OPTIMIZATION?=-O2
 DEFINE?= #-DUSE_DEBUG 
 DEBUG_FLAGS?= # -g -ggdb 
 WARNINGS=-Wall -W -Wwrite-strings
-CXXFLAGS=-std=c++11 -fPIC -fno-omit-frame-pointer
-LDFLAGS+=-L../lib # xxx 
-LDYNAMICS+=-lpthread -lcconf # -lhiredis
+CXXFLAGS=-std=c++11 -fPIC -fno-omit-frame-pointer 
+LDFLAGS+=-L../lib -L/usr/local/cloriconf/lib # xxx 
+LDYNAMICS+=-lpthread -lcloriconf -Wl,-rpath=/usr/local/cloriconf/lib # -lhiredis
 TEST_SPEC_LD=-lgtest -lpthread
-INCLUDES=-I. -I./include # -I/usr/local/include/hiredis
+INCLUDES=-I. -I/usr/local/cloriconf/include # -I/usr/local/include/hiredis
 
 CFLAGS=-std=c99 -pedantic -c -O3 -fPIC  -Wall -W -Wstrict-prototypes -Wwrite-strings # -g -ggdb
 CXXFLAGS_ALL=$(CXXFLAGS) $(DEFINE) $(OPTIMIZATION) $(DEBUG_FLAGS) $(WARNINGS)

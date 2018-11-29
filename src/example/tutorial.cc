@@ -61,7 +61,7 @@ void AccessRedisWithErrorCheck() {
         // output: ERR unknown command `NOCOMMAND`, with args beginning with: `city`, `Beijing`
         std::cout << "run command error:" << conn1->err_str() << std::endl;
     } else {
-        std::cout << "run command ok" << std::endl
+        std::cout << "run command ok" << std::endl;
     }
     delete manager;
 }
