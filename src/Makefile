@@ -4,14 +4,19 @@
 #
 # NOTE: 
 # * hiredis has been packed into cloredis, so you don't need to install hiredis independently
-# * Cloredis will install in /usr/local/ directory by default
 # * You can change installation directory by run 'make install PREFIX=$(YOUR_DIR)'
 #
-# compile command:
-# make -- normal compilation
-# make DEFINE=-DUSE_DEBUG -- For cloredis internal test
+# Compile commands:
 #
-PREFIX?=/usr/local
+# make 				        -- normal compilation, no tutorial nor unit test
+# make DEFINE=-DUSE_DEBUG   -- enable cloredis internal debug
+# make enable_utest=true    -- enable cloredis unit test
+# make enable_tutorial=true -- enable cloredis example 
+# make install PREFIX=xxx   -- install cloredis in directory xxx 
+#
+# by default, cloredis will be installed in '/usr/local/cloredis/' directory
+#
+PREFIX?=/usr/local/cloredis
 INCLUDE_PATH?=include/cloredis
 LIB_PATH?=lib
 
@@ -35,12 +40,19 @@ DEFINE?= #-DUSE_DEBUG
 DEBUG_FLAGS?= # -g -ggdb 
 WARNINGS=-Wall -W -Wwrite-strings
 CXXFLAGS=-std=c++11 -fPIC -fno-omit-frame-pointer 
-LDFLAGS+=-L../lib -L/usr/local/cloriconf/lib # xxx 
-LDYNAMICS+=-lpthread -lcloriconf -Wl,-rpath=/usr/local/cloriconf/lib # -lhiredis
+LDFLAGS+=-L../lib
+LDYNAMICS+=-lpthread
 TEST_SPEC_LD=-lgtest -lpthread
-INCLUDES=-I. -I/usr/local/cloriconf/include # -I/usr/local/include/hiredis
+INCLUDES=-I.
 
 CFLAGS=-std=c99 -pedantic -c -O3 -fPIC  -Wall -W -Wstrict-prototypes -Wwrite-strings # -g -ggdb
+
+ifeq ($(enable_utest), true)
+	LDFLAGS+=-L/usr/local/cloriconf/lib
+	LDYNAMICS+=-lcloriconf -Wl,-rpath=/usr/local/cloriconf/lib 
+	INCLUDES+=-I/usr/local/cloriconf/include 
+endif
+
 CXXFLAGS_ALL=$(CXXFLAGS) $(DEFINE) $(OPTIMIZATION) $(DEBUG_FLAGS) $(WARNINGS)
 
 INSTALL_INCLUDE_PATH=$(PREFIX)/$(INCLUDE_PATH)
@@ -63,9 +75,19 @@ OBJECTS=$(SOURCES:%.cc=%.o)
 HIREDIS_SRC=$(wildcard hiredis/*.c)
 HIREDIS_OBJS=$(HIREDIS_SRC:%.c=%.o)
 
-all: $(DYLIB_MINOR_NAME) $(STLIB_NAME) $(TEST_BIN) ${TUTORIAL_BIN}
-	mv $(TEST_BIN) ../bin/  
-	mv $(TUTORIAL_BIN) ../bin/  
+ALL_TARGET=$(DYLIB_MINOR_NAME) $(STLIB_NAME)
+ifeq ($(enable_utest), true)
+	ALL_TARGET+=$(TEST_BIN)
+endif
+
+ifeq ($(enable_tutorial), true)
+	ALL_TARGET+=$(TUTORIAL_BIN)
+endif
+
+all: $(ALL_TARGET)
+	@echo "mv $(TEST_BIN) and $(TUTORIAL_BIN) to bin directory..."
+	@if [ -f $(TEST_BIN) ]; then mv $(TEST_BIN) ../bin/ ; fi
+	@if [ -f $(TUTORIAL_BIN) ]; then mv $(TUTORIAL_BIN) ../bin/ ; fi
 	@echo "All done ===="
 
 $(TEST_BIN):$(OBJECTS) $(TEST_OBJECTS) $(HIREDIS_OBJS)
@@ -73,7 +95,6 @@ $(TEST_BIN):$(OBJECTS) $(TEST_OBJECTS) $(HIREDIS_OBJS)
 
 $(TUTORIAL_BIN):$(OBJECTS) $(TUTORIAL_OBJECTS) $(HIREDIS_OBJS)
 	$(CXX) $^ -o $@ $(LDFLAGS) $(LDYNAMICS) ${TEST_SPEC_LD}
-
 
 $(DYLIB_MINOR_NAME):$(OBJECTS) $(HIREDIS_OBJS)
 	$(CXX) -o $@ $^ -shared -Wl,-soname,$(DYLIB_MAJOR_NAME) $(LDFLAGS) $(LDYNAMICS) 
@@ -94,8 +115,12 @@ $(OBJECTS):%.o:%.cc
 	$(CXX) $(INCLUDES) $(CXXFLAGS_ALL) -c $< -o $@
 
 install:$(DYLIB_MINOR_NAME) $(STLIB_NAME)
-	mkdir -p $(INSTALL_INCLUDE_PATH) $(INSTALL_LIB_PATH)
+	mkdir -p $(INSTALL_INCLUDE_PATH) $(INSTALL_INCLUDE_PATH)/internal $(INSTALL_LIB_PATH)
 	$(INSTALL_CMD) cloredis.h $(INSTALL_INCLUDE_PATH) 
+	$(INSTALL_CMD) connection.h $(INSTALL_INCLUDE_PATH) 
+	$(INSTALL_CMD) reply.h $(INSTALL_INCLUDE_PATH) 
+	$(INSTALL_CMD) internal/connection_pool.h $(INSTALL_INCLUDE_PATH)/internal
+	$(INSTALL_CMD) internal/singleton.h $(INSTALL_INCLUDE_PATH)/internal
 	$(INSTALL_CMD) $(STLIB_NAME) $(INSTALL_LIB_PATH)
 	$(INSTALL_CMD) $(DYLIB_MINOR_NAME) $(INSTALL_LIB_PATH)
 	cd $(INSTALL_LIB_PATH) && ln -sf $(DYLIB_MINOR_NAME) $(DYLIB_MAJOR_NAME) 
