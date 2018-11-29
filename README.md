@@ -3,7 +3,7 @@ cloRedis
 
 Cloredis is a simple, high-performance C++ Client for Redis with native support for connection pool and master/slave instances access 
 
-The design of cloRedis references and integrates many leading Redis Client in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
+The design of cloredis references, integrates and takes advantage of many leading Redis Client in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
 
 * [Features](#features)
 
@@ -17,19 +17,58 @@ Cloredis's features make it well adapted for production environment. Now cloredi
 
 ## Usage
 
-The following shows how to get a connection from connection pool, select specific db and run redis command by using redis connection
+Basic usage:
 ``` C++
+//
+// The following shows how to get a connection from connection pool, select specific db 
+// and run redis command by using redis connection
+//
+#include <cloredis/cloredis.h>
+using namespace cloris;
+
 RedisManager *manager = RedisManager::instance();
 if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
     std::cout << "init redis manager failed" << std::endl;
 }
 {
-    // note: You do not need to release 'conn1' as cloredis will do it automatically
+    // note: You do not need to put 'conn1' back to connection pool as cloredis will do it automatically
     RedisConnection conn1 = manager->Get(1); 
     conn1->Do("SET tkey1 %d", 100);
     std::cout << conn1->Do("GET tkey1").toString() << std::endl; // 100
 }
 ...
+```
+Advanced usage:
+```C++
+// Specify connection pool options and access master/slave instance
+#include <cloredis/cloredis.h>
+using namespace cloris;
+
+ConnectionPoolOption option;
+option.max_idle = 40;
+option.max_active = 100;
+option.idle_timeout_ms = 180 * 1000;   
+RedisManager *manager = RedisManager::instance();
+// '172.17.224.212:6379' is master host, and "172.17.224.212:6380,172.17.224.212:6381" is two slave hosts
+if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:6381", "cloris520", 100, &option)) {
+    std::cout << "init redis manager failed" << std::endl;
+}
+// access redis master instance, you can also write as 'RedisConnection conn1 = manager->Get(5, NULL, MASTER)'
+RedisConnection conn1 = manager->Get(5);
+conn1->Do("NOCOMMAND city %s", "Beijing");
+// use 'ok' or 'error' method to determine whether the command has run success
+// true
+if (conn1->error()) {
+    std::cout << "run command error:" << conn1->err_str() << std::endl;
+} else {
+    std::cout << "run command ok" << std::endl;
+}
+conn1->Do("set tkey 100");
+sleep(5);
+// access redis slave instance
+conn2 = manager->Get(5, NULL, SLAVE);
+std::cout << conn2->Do("GET tkey").toString() << std::endl;
+
 ```
 
 ## Installation
