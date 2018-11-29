@@ -6,7 +6,7 @@ Cloredis is a simple, high-performance C++ Client for Redis with native support 
 Cloredis's main goal is to provide a more convenient way to access redis in production environment than general C++ client.The design of cloredis references, integrates and takes advantage of many leading Redis Clients in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
 
 * [Features](#features)
-* [Usage](#usage)
+* [Usage at a glance](#usage)
 * [Installation](#installation)
 * [API Reference](#reference)
 ## Features<div id="features"></div>
@@ -17,7 +17,7 @@ Cloredis's main goal is to provide a more convenient way to access redis in prod
 
 Cloredis's features make it well adapted for production environment. Now cloredis is used in ofo Inc. and works very well.
 
-## Usage<div id="usage"></div>
+## Usage at a glance<div id="usage"></div>
 
 Basic usage:
 ``` C++
@@ -33,7 +33,8 @@ if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
     std::cout << "init redis manager failed" << std::endl;
 }
 {
-    // note: You do not need to put 'conn1' back to connection pool as cloredis will do it automatically
+    // Note! You do not need to put 'conn1' back to connection pool as cloredis will 
+    // do it automatically in its destructor function
     RedisConnection conn1 = manager->Get(1); 
     conn1->Do("SET tkey1 %d", 100);
     std::cout << conn1->Do("GET tkey1").toString() << std::endl; // 100
