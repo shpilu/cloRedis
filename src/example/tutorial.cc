@@ -67,6 +67,8 @@ void AccessRedisWithErrorCheck() {
 }
 
 int main(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
     AccessRedisSimple();
     AccessMasterSlave();
     AccessRedisWithErrorCheck();
