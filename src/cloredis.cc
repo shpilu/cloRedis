@@ -175,9 +175,6 @@ bool RedisManager::InitEx(const std::string& master_host,
 }
 
 RedisConnectionImpl* RedisManager::Get(int db, std::string* err_msg, RedisRole role, int index) {
-    // TODO delete it
-    (void)role;
-    (void)index;
     if (db >= MAX_DB_NUM) {
         return NULL;
     }

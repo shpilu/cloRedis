@@ -212,7 +212,6 @@ Type* ConnectionPool<Type>::Get(std::string* err_msg) {
     for (ListItem<Type> *item = idle_.front; item != NULL; item = idle_.front) {
         idle_.PopFront();
         if ((option_.max_conn_life_time <= 0) || (__get_current_time_ms() - item->create_time < option_.max_conn_life_time)) {
-            // TODO
             lck.unlock();
             return item->GetObject(); 
         }

@@ -50,7 +50,6 @@ public:
     RedisConnectionImpl* Get(int db = DEFAULT_DB, std::string* err_msg = NULL, RedisRole role = MASTER, int index = -1);
     void Flush();
 
-    // TODO
     int ActiveConnectionCount(RedisRole role = MASTER);
     int ConnectionInUse(RedisRole role = MASTER);
     int ConnectionInPool(RedisRole role = MASTER);
