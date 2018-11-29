@@ -29,11 +29,17 @@ RedisConnectionImpl::~RedisConnectionImpl() {
     }
 } 
 
+bool RedisConnectionImpl::IsRawConnection() {
+    return (!reply_ && (err_state_ == STATE_OK));
+}
+
 void RedisConnectionImpl::Done() {
     cLog(DEBUG, "Reclaim connection");
-    Update(NULL, true, STATE_ERROR_INVOKE, NULL); 
+    bool is_conn_ok = this->ok() || this->IsRawConnection();
+    // convert to raw connection
+    Update(NULL, true, STATE_OK, NULL); 
     if (pool_) {
-        pool_->Put(this);
+        pool_->Put(this, is_conn_ok);
     } else {
         BUG("RedisConnectionImpl manager do not exist");
     }

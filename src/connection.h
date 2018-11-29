@@ -41,6 +41,7 @@ public:
     RedisConnectionImpl& Do(const char *format, ...);
 private:
 	~RedisConnectionImpl(); // forbid allocation in the stack
+    bool IsRawConnection();
     RedisConnectionImpl& __Do(const char *format, va_list ap);
     bool Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout, int db); 
     void Done();

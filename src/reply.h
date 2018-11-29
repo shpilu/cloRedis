@@ -47,12 +47,12 @@ public:
     RedisReplyPtr operator[](size_t index);
 protected:
     void Update(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg); 
+    redisReply* reply_;
+    ERR_STATE err_state_;
 private:
     void UpdateErrMsg(const char* err_msg); 
     char err_str_[REDIS_ERRSTR_LEN]; //
-    redisReply* reply_;
     bool reclaim_;
-    ERR_STATE err_state_;
 };
 
 } // namespace cloris

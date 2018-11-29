@@ -157,7 +157,7 @@ public:
     }
     ~ConnectionPool(); 
     Type* Get(std::string* err_msg = NULL);
-    void Put(Type* type);
+    void Put(Type* type, bool is_ok = true);
 
     int conn_in_pool() const { return idle_.count; }
     int active_cnt() const {  return active_cnt_; }
@@ -268,8 +268,8 @@ void ConnectionPool<Type>::Gc(Type* type) {
 }
 
 template<typename Type>
-void ConnectionPool<Type>::Put(Type* type) {
-    if (!type->ok()) {
+void ConnectionPool<Type>::Put(Type* type, bool is_ok) {
+    if (!is_ok) {
         Gc(type);
         return;
     }
