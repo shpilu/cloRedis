@@ -3,7 +3,7 @@ cloRedis
 
 Cloredis is a simple, high-performance C++ Client for Redis with native support for connection pool and master/slave instances access 
 
-The design of cloredis references, integrates and takes advantage of many leading Redis Client in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
+The design of cloredis references, integrates and takes advantage of many leading Redis Clients in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
 
 * [Features](#features)
 * [Usage](#usage)
@@ -88,7 +88,7 @@ Noteworthy is that hiredis has been intergrated into cloredis, so you do not nee
 
 ## API Reference<div id="reference"></div> 
 
-Comming soon.
+Cloredis's API document will come soon, and now you can refer to [tutorial](https://github.com/shpilu/cloRedis/blob/master/src/example/tutorial.cc) temporarily
 
 ## Who Is Using Cloredis?
 
