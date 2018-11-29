@@ -53,7 +53,6 @@ private:
     int action_count_;
 };
 
-// RedisConnection: guard of RedisConnectionImpl
 class RedisConnection {
     static RedisConnectionImpl dummy_conn_impl;
 public:
