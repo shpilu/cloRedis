@@ -141,6 +141,7 @@ struct ConnectionPoolStats {
 };
 
 
+// class 'Type' must implement 'ok' method
 template <typename Type> 
 class ConnectionPool {
 public:
@@ -268,6 +269,11 @@ void ConnectionPool<Type>::Gc(Type* type) {
 
 template<typename Type>
 void ConnectionPool<Type>::Put(Type* type) {
+    if (!type->ok()) {
+        Gc(type);
+        return;
+    }
+
     ListItem<Type> *item = reinterpret_cast<ListItem<Type>*>(type) - 1;
     item->active_time = __get_current_time_ms();
     ListItem<Type> *idl(NULL);
