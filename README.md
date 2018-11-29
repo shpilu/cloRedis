@@ -96,5 +96,5 @@ Comming soon.
 
 ## Authors
 
-* James Wei (weijianlhp@163.com)
+* James Wei (weijianlhp@163.com)   
 Please contact me if you have trouble using cloRedis.
