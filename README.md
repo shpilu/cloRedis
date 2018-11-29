@@ -1,31 +1,35 @@
-Cloredis
+cloRedis
 =====
 
-Cloredis - committed to providing an easier way to access redis in C++ program environment.
+Cloredis is a simple, high-performance C++ Client for Redis with native support for connection pool and master/slave instances access 
 
-## Introduction
+The design of cloRedis references and integrates many leading Redis Client in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
 
-Cloredis is a simple, flexsible, easy-to-use C++ client library for the Redis database based on hiredis. As designed, accessing redis should be as easy as possible, like "Get a connection, run command", or even "Run command". That's to say, you don't need to connect redis or release the connection by yourself, and cloredis is where it should be. 
+* [Features](#features)
 
-## Features
+## Features<div id="features"></div>
 
-* Automatic memory management
-* Support connection pool naturally
-* Easier way to run Lua script
-* High rubustness and fault-tolerance
-* Support C++11 and above version only
+* Support connection pool and memory pool naturally -- All connection operations are based on connection pool.
+* Automatic memory management and connection reclaim -- You do not need any memory operation, nor need you put the connection back to connection pool when it is no longer required.  
+* Support master/slave replication -- You can choose access master or slave instance in redis replication environment.
+
+Cloredis's features make it well adapted for production environment. Now cloredis is used in ofo Inc. and works very well.
 
 ## Usage
 
-entry-level usage:
+The following shows how to get a connection from connection pool, select specific db and run redis command by using redis connection
 ``` C++
-RedisManager* manager = RedisManager::instance();
-manager->Connect("127.0.0.1", 6379, 1000, "password"); 
-RedisConnection conn = manager->Get(2);
-std::string my_value = conn->Do("GET %s", "my_key").toString();
-int exist = conn->Do("EXISTS %s", "my_key").toInt32();
-conn->Do("SET %s %d", "my_key", 8);
-// You do not need to release 'conn' as cloredis will do it automatically
+RedisManager *manager = RedisManager::instance();
+if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
+    std::cout << "init redis manager failed" << std::endl;
+}
+{
+    // note: You do not need to release 'conn1' as cloredis will do it automatically
+    RedisConnection conn1 = manager->Get(1); 
+    conn1->Do("SET tkey1 %d", 100);
+    std::cout << conn1->Do("GET tkey1").toString() << std::endl; // 100
+}
+...
 ```
 
 ## Installation
