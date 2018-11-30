@@ -70,7 +70,7 @@ if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:
 
 {
     // access redis master instance, you can also write as 'RedisConnection conn1 = manager->Get(5, NULL, MASTER)'
-    // 默认是取主库
+    // 默认取主库
     RedisConnection conn1 = manager->Get(5);
     conn1->Do("NOCOMMAND city %s", "Beijing");
     // use 'ok' or 'error' method to determine whether the command has run success
