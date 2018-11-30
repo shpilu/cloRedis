@@ -8,7 +8,7 @@
 #
 # Compile commands:
 #
-# make 				        -- normal compilation, no tutorial nor unit test(GoogleTest must be installed at first)
+# make  -- normal compilation, no tutorial nor unit test(GoogleTest must be installed at first)
 # make DEFINE=-DUSE_DEBUG   -- enable cloredis internal debug
 # make enable_utest=true    -- enable cloredis unit test
 # make enable_tutorial=true -- enable cloredis example 
