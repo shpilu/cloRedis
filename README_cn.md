@@ -39,6 +39,7 @@ using namespace cloris;
 RedisManager *manager = RedisManager::instance();
 if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
     std::cout << "init redis manager failed" << std::endl;
+    return;
 }
 {
     // 注意！redis连接conn1会自动回收(在其析构函数中)，不用手动释放
@@ -64,6 +65,7 @@ RedisManager *manager = RedisManager::instance();
 // '172.17.224.212:6379' 是主库, "172.17.224.212:6380,172.17.224.212:6381" 是从库 
 if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:6381", "cloris520", 100, &option)) {
     std::cout << "init redis manager failed" << std::endl;
+    return;
 }
 
 {

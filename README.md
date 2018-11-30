@@ -37,6 +37,7 @@ using namespace cloris;
 RedisManager *manager = RedisManager::instance();
 if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
     std::cout << "init redis manager failed" << std::endl;
+    return;
 }
 {
     // Note! You do not need to put 'conn1' back to connection pool as cloredis will 
@@ -61,6 +62,7 @@ RedisManager *manager = RedisManager::instance();
 // '172.17.224.212:6379' is master host, and "172.17.224.212:6380,172.17.224.212:6381" is two slave hosts
 if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:6381", "cloris520", 100, &option)) {
     std::cout << "init redis manager failed" << std::endl;
+    return;
 }
 
 {

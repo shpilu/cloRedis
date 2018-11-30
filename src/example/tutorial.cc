@@ -11,6 +11,7 @@ void AccessRedisSimple() {
     RedisManager *manager = RedisManager::instance();
     if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
         std::cout << "init redis manager failed" << std::endl;
+        return;
     }
 
     // case 1:
@@ -33,6 +34,7 @@ void AccessMasterSlave() {
     RedisManager *manager = new RedisManager();
     if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:6381", "cloris520", 100)) {
         std::cout << "init redis manager failed" << std::endl;
+        return;
     }
     RedisConnection conn1 = manager->Get(2, NULL, MASTER);
     conn1->Do("SET phonenum %s", "1891189xxxx");
@@ -53,6 +55,7 @@ void AccessRedisWithErrorCheck() {
     RedisManager *manager = new RedisManager();
     if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:6381", "cloris520", 100, &option)) {
         std::cout << "init redis manager failed" << std::endl;
+        return;
     }
     RedisConnection conn1 = manager->Get(5);
     conn1->Do("NOCOMMAND city %s", "Beijing");
