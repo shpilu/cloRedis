@@ -9,7 +9,7 @@ Cloredis是一个简单易用的Redis C++客户端库，致力于提供一套比
 
 这些特性使得cloredis特别适用于生产环境，目前cloRedis在ofo小黄车得到了应用，效果不错。
 
-在设计上，cloRedis的底层实现是[hiredis](https://github.com/redis/hiredis.git)，并参考了部分业界领先的开源库，比如连接池的设计参考了[redigo](https://github.com/gomodule/redigo.git)(Golang最流行的redis库)，redis连接自动回收功能参考了[brpc](https://github.com/brpc/brpc.git)(百度开源的高性能RPC框架)，主从redis库访问参考了[redis3m](https://github.com/luca3m/redis3m.git)，同时有它自己的特性。
+在设计上，cloRedis博采众长，其底层实现是[hiredis](https://github.com/redis/hiredis.git)，并参考了部分业界领先的开源库，比如连接池的设计参考了[redigo](https://github.com/gomodule/redigo.git)(Golang最流行的redis库)，redis连接自动回收特性参考了[brpc](https://github.com/brpc/brpc.git)(百度公司开源的高性能RPC框架)，主从redis库访问参考了[redis3m](https://github.com/luca3m/redis3m.git)，同时有它自己的特性。
 
 * [主要特性](#features)
 * [Cloredis使用实例](#usage)
