@@ -97,11 +97,11 @@ Noteworthy is that hiredis has been intergrated into cloredis, so you do not nee
 
 ## API Reference<div id="reference"></div> 
 
-Cloredis's API document will come soon, and now you can refer to [tutorial](https://github.com/shpilu/cloRedis/blob/master/src/example/tutorial.cc) temporarily
+Cloredis's API document will come soon, and now you can refer to [tutorial](https://github.com/shpilu/cloRedis/blob/master/src/example/tutorial.cc) temporarily.
 
 ## Who Is Using Cloredis?
 
-* [ofo 小黄车](http://www.ofo.so/#/) - ofo Inc., a Beijing-based bicycle sharing company
+* [ofo 小黄车](http://www.ofo.so/#/) - ofo Inc., a Beijing-based bicycle sharing company.
 
 ## Authors
 
