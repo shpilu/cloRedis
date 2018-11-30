@@ -3,7 +3,7 @@
 cloRedis<div id="top"></div>
 ====
 
-Cloredis是一个简单易用的Redis C++客户端库，致力于提供一套比你能在github上找到的其它各类redis C++库更方便的redis存取方式。
+Cloredis是一个简单易用的Redis C++客户端库，致力于提供一套比其它各类redis C++库更方便的redis存取方式。
 
 它天然支持内存池与连接池，以提高存取效率，并支持redis连接在不需要时自动放回连接池(<strong>cloredis特有的功能</strong>)，同时完全接管了内存分配与释放操作，避免了内存泄漏与redis连接泄漏的风险，最后在设计上特意考量了生产环境常用的一主多从Redis部署场景，从而可以更方便地选择访问主库或者从库。
 
