@@ -87,6 +87,12 @@ make
 sudo make install
 ```
 Or you can customize install directory by running command "make install PREFIX=$TARGET_DIR".  
+
+The following example shows how to compile with cloredis(assume cloredis is installed in '/usr/local/cloredis' directory)
+```C++
+g++ tutorial.cc -I/usr/local/cloredis/include -L/usr/local/cloredis/lib/ -lcloredis -o main  -std=c++11 -Wl,-rpath=/usr/local/cloredis/lib
+```
+
 Noteworthy is that hiredis has been intergrated into cloredis, so you do not need to install hiredis separately.
 
 ## API Reference<div id="reference"></div> 
