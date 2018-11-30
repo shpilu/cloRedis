@@ -29,7 +29,7 @@ class RedisReply {
 public:
     RedisReply();
     RedisReply(redisReply* reply, bool reclaim, ERR_STATE state, const char* err_msg);
-    ~RedisReply();
+    virtual ~RedisReply();
 
     ERR_STATE err_state() const { return err_state_; }
     bool error() const; 
