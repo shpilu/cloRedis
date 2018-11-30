@@ -42,7 +42,7 @@ if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
     return;
 }
 {
-    // 注意！redis连接conn1会自动回收(在其析构函数中)，不用手动释放
+    // 注意！redis连接conn1会自动回收(在其析构函数中)，不用手动放回连接池
     RedisConnection conn1 = manager->Get(1); 
     conn1->Do("SET tkey1 %d", 100);
     std::cout << conn1->Do("GET tkey1").toString() << std::endl; // 100
