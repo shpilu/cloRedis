@@ -80,6 +80,7 @@ if (!manager->InitEx("172.17.224.212:6379", "172.17.224.212:6380,172.17.224.212:
     conn2 = manager->Get(5, NULL, SLAVE);
     std::cout << conn2->Do("GET tkey").toString() << std::endl;
 }
+
 ```
 
 ## Installation<div id="installation"></div>
@@ -89,6 +90,7 @@ On Linux system you can build cloredis compile and runtime environment by runnin
 cd src
 make
 sudo make install
+
 ```
 Or you can customize install directory by running command "make install PREFIX=$TARGET_DIR".  
 

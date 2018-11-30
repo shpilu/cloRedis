@@ -3,7 +3,7 @@
 cloRedis<div id="top"></div>
 ====
 
-Cloredis是一个简单易用的Redis C++客户端库，致力于提供一套比市面上各类redis C++库更方便的redis存取方式。
+Cloredis是一个简单易用的Redis C++客户端库，致力于提供一套比你能在github上找到的其它各类redis C++库更方便的redis存取方式。
 
 它天然支持内存池与连接池，以提高存取效率，并支持redis连接在不需要时自动放回连接池(<strong>cloredis特有的功能</strong>)，同时完全接管了内存分配与释放操作，避免了内存泄漏与redis连接泄漏的风险，最后在设计上特意考量了生产环境常用的一主多从Redis部署场景，从而可以更方便地选择访问主库或者从库。
 
@@ -12,7 +12,7 @@ Cloredis是一个简单易用的Redis C++客户端库，致力于提供一套比
 在设计上，cloRedis的底层实现是[hiredis](https://github.com/redis/hiredis.git)，并参考了部分业界领先的开源库，比如连接池的设计参考了[redigo](https://github.com/gomodule/redigo.git)(Golang最流行的redis库)，redis连接自动回收功能参考了[brpc](https://github.com/brpc/brpc.git)(百度开源的高性能RPC框架)，主从redis库访问参考了[redis3m](https://github.com/luca3m/redis3m.git)，同时有它自己的特性。
 
 * [主要特性](#features)
-* [Cloredis实例一瞥](#usage)
+* [Cloredis使用实例](#usage)
 * [安装](#installation)
 * [API参考](#reference)
 * [谁在使用cloRedis](#users)
@@ -23,9 +23,9 @@ Cloredis是一个简单易用的Redis C++客户端库，致力于提供一套比
 * 天然支持连接池与内存池 -- cloRedis的每个redis连接都有一个对应的连接池，所有操作都可抽象为“从连接池取连接--执行redis命令”的过程；当连接回收时其开辟的内存块会进入内存池，而分配新连接时也优先从内存池分配 
 * redis连接自动回收 -- <strong>当redis连接不再使用时会自动回收，不需要手动将连接放回连接池</strong>，使开发者从连接管理与内存管理中完全解放出来
 * 支持一主多从 -- 一般redis库只封装了一个redis库的连接，cloredis兼顾了一主多从的部署场景，能选择访问主库或者特定的从库，使得访问一主多从的场景更加简单 
-* 针对每个每个db建连接池 -- 不用执行select命令选择数据库(性能上的一点提升)，且只有某个db用到时才会建池 
+* 针对每个每个db建连接池 -- 不用执行select命令选择数据库(性能和操作上的一点优化)，且只有某个db用到时才会建对应的连接池 
 
-## Cloredis实例一瞥<div id="usage"></div>
+## Cloredis使用实例<div id="usage"></div>
 
 基本用法:
 ``` C++
@@ -49,7 +49,7 @@ if (!manager->Init("172.17.224.212:6379", "cloris520", 100)) {
 ...
 
 ```
-Advanced usage:
+高级用法:
 ```C++
 // Specify connection pool options and access master/slave instance
 #include <cloredis/cloredis.h>
@@ -102,11 +102,11 @@ sudo make install
 ```C++
 g++ tutorial.cc -I/usr/local/cloredis/include -L/usr/local/cloredis/lib/ -lcloredis -o main  -std=c++11 -Wl,-rpath=/usr/local/cloredis/lib
 ```
-cloredis对其他库没有依赖，你不需要安装其他依赖库
+cloredis对其他库没有依赖，你不需要安装其他依赖库。
 
 ## API参考<div id="reference"></div> 
 
-Cloredis的API文档后续将会提供，你可以先参考[教程]或者直接看源码了解cloredis的用法。
+Cloredis的API文档后续将会提供，你可以先参考[教程](https://github.com/shpilu/cloRedis/blob/master/src/example/tutorial.cc)或者直接看源码了解cloredis的用法。
 
 ## 谁在使用cloRedis<div id="users"></div>
 
