@@ -1,4 +1,6 @@
-cloRedis
+[中文版](README_cn.md)
+
+cloRedis<div id="top"></div>
 =====
 
 Cloredis is a simple, high-performance C++ Client for Redis with native support for connection pool and master/slave instances access. 
@@ -11,6 +13,8 @@ Cloredis is not a standalone project, the design of which references, integrates
 * [Usage at a glance](#usage)
 * [Installation](#installation)
 * [API Reference](#reference)
+* [Who Is Using CloRedis?](#users)
+* [Authors](#authors)
 ## Features<div id="features"></div>
 
 * Support connection pool and memory pool naturally -- All connection operations are based on connection pool.
@@ -99,11 +103,13 @@ Noteworthy is that hiredis has been intergrated into cloredis, so you do not nee
 
 Cloredis's API document will come soon, and now you can refer to [tutorial](https://github.com/shpilu/cloRedis/blob/master/src/example/tutorial.cc) temporarily.
 
-## Who Is Using Cloredis?
+## Who Is Using CloRedis?<div id="users"></div>
 
 * [ofo 小黄车](http://www.ofo.so/#/) - ofo Inc., a Beijing-based bicycle sharing company.
 
-## Authors
+## Authors<div id="authors"></div>
 
 * James Wei (weijianlhp@163.com)   
 Please contact me if you have trouble using cloRedis.
+
+[Go back to top](#top)
