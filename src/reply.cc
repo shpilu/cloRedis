@@ -91,11 +91,9 @@ int64_t RedisReply::toInt64() const {
     return value;
 }
 
-
 bool RedisReply::error() const {  
     return (!reply_ || (reply_->type == REDIS_REPLY_ERROR));
 }
-
 
 bool RedisReply::ok() const {  
     return (reply_ && (reply_->type != REDIS_REPLY_ERROR)); 
