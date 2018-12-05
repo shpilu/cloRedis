@@ -58,7 +58,7 @@ std::string RedisReply::toString() const {
             case REDIS_REPLY_STRING:
             case REDIS_REPLY_STATUS:
             case REDIS_REPLY_ERROR:
-                value = reply_->str;
+                value.assign(reply_->str, reply_->len);
                 break;
             default:
                 ;
