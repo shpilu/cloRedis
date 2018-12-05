@@ -117,5 +117,6 @@ Cloredis的API文档后续将会提供，你可以先参考[教程](https://gith
 ## 作者<div id="authors"></div>
 
 * James Wei (weijianlhp@163.com)   
+* Virgood (suchoy0607@gmail.com)
 
 [返回顶部](#top)
