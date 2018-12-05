@@ -115,6 +115,6 @@ Cloredis's API document will come soon, and now you can refer to [tutorial](http
 
 * James Wei (weijianlhp@163.com)   
 * Virgood (suchoy0607@gmail.com)   
-Please contact me if you have trouble using cloRedis.
+Please contact us if you have trouble using cloRedis.
 
 [Go back to top](#top)
