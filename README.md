@@ -1,7 +1,13 @@
-[中文版](README_cn.md)
 
 cloRedis<div id="top"></div>
 =====
+尽管github上有众多的redis客户端库，我们还是设计了cloRedis，在于cloRedis有这些超过一般redis客户端库的特性:
+* **天然支持连接池且redis连接使用后自动放回连接池**(cloRedis独有的特性)
+* **天然支持一主多从**(大部分redis客户端库没有的特性)
+
+[中文版](README_cn.md)
+
+## Introduction
 
 Cloredis is a simple, high-performance C++ Client for Redis with native support for connection pool and master/slave instances access. 
 
