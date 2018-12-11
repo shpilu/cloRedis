@@ -4,7 +4,7 @@ cloRedis<div id="top"></div>
 * **天然支持连接池，且redis连接使用后自动回收**(cloRedis独有的特性)
 * **支持一主多从**(大部分redis客户端没有的特性)
 
-cloRedis被设计用于解决一般redis c++客户端操作繁琐(不支持连接池或者redis连接需要手动回收、不支持主从)的问题.
+cloRedis被设计用于解决一般redis c++客户端操作繁琐(不支持连接池或者redis连接需要手动回收、不支持主从)的问题，目前已经过生产环境的考验。
 
 [中文版](README_cn.md)
 
