@@ -1,4 +1,3 @@
-
 cloRedis<div id="top"></div>
 =====
 尽管github上有众多的redis客户端库，我们还是设计了cloRedis，在于cloRedis有这些超过一般redis客户端库的特性:
