@@ -1,18 +1,10 @@
-cloRedis<div id="top"></div>
-=====
-尽管github上有众多的redis客户端库，cloRedis还是做了一定的创新，有以下优于一般redis客户端的特性:
-* **天然支持连接池，且redis连接使用后自动回收**(cloRedis独有的特性)
-* **支持一主多从**(大部分redis客户端没有的特性)
-
-cloRedis被设计用于解决一般redis c++客户端操作繁琐(不支持连接池或者redis连接需要手动回收、不支持主从)的问题，目前已经过生产环境的考验。
 
 [中文版](README_cn.md)
 
-## Introduction
+cloRedis<div id="top"></div>
+=====
 
-Cloredis is a simple, high-performance C++ Client for Redis with native support for connection pool and master/slave instances access. 
-
-Cloredis's main goal is to <strong>provide a more convenient way to access redis in production environment than general C++ client</strong>.
+Cloredis is a simple, high-performance C++ Client for Redis with native support for connection pool and master/slave instances access, and its main goal is to <strong>provide a more convenient way to access redis in production environment than general C++ client</strong>.
 
 Cloredis is not a standalone project, the design of which references, integrates and takes advantage of some leading Redis Clients in C++/Golang language, e.g. [hiredis](https://github.com/redis/hiredis.git), [redigo](https://github.com/gomodule/redigo.git), [redis3m](https://github.com/luca3m/redis3m.git) and [brpc](https://github.com/brpc/brpc.git), and has its own features.
 

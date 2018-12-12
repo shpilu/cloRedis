@@ -2,6 +2,14 @@
 
 cloRedis<div id="top"></div>
 ====
+尽管github上有众多的redis客户端库，cloRedis还是做了一定的创新，有以下优于一般redis客户端的特性:
+* **天然支持连接池，且redis连接使用后自动回收**(cloRedis独有的特性)
+* **支持一主多从**(大部分redis客户端没有的特性)
+
+## 简介
+
+cloRedis被设计用于解决一般redis c++客户端操作繁琐(不支持连接池或者redis连接需要手动回收、不支持主从)的问题，目前已经过生产环境的考验。
+
 
 Cloredis是一个简单易用、线程安全的Redis C++客户端库，致力于提供一套比目前开源的其它各类redis C++库更方便的redis存取方式。
 
