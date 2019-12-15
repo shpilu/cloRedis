@@ -2,7 +2,7 @@
 
 cloRedis<div id="top"></div>
 ====
-尽管github上有众多的redis客户端库，cloRedis还是做了一定的创新，有以下优于一般redis客户端的特性:
+尽管github上有众多的redis客户端库，但在易用性与性能方面总感觉有所不足，我们根据实际工程经验并博采众长，开发了cloRedis。与一般redis客户端相比，cloRedis有以下优点:
 * **天然支持连接池，且redis连接使用后自动回收**(cloRedis独有的特性)
 * **支持一主多从**(大部分redis客户端没有的特性)
 
@@ -12,7 +12,7 @@ Cloredis是一个简单易用、线程安全的Redis C++客户端库，设计用
 
 它天然支持内存池与连接池，以提高Redis存取效率，并支持redis连接在不需要时自动放回连接池，同时完全接管了内存分配与释放操作，避免了内存泄漏与redis连接泄漏的风险，最后在设计上特意考量了生产环境常用的一主多从Redis部署场景，从而可以更方便地选择访问主库或者从库。
 
-这些特性使得cloredis特别适用于生产环境，目前cloRedis在ofo小黄车得到了应用，效果不错。
+这些特性使得cloredis比较适用于生产环境，目前cloRedis在ofo小黄车得到了应用，效果不错。
 
 在设计上，cloRedis博采众长，其底层实现是[hiredis](https://github.com/redis/hiredis.git)，并参考了部分业界领先的开源库，比如连接池的设计参考了[redigo](https://github.com/gomodule/redigo.git)(Golang最流行的redis库)，redis连接自动回收特性参考了[brpc](https://github.com/brpc/brpc.git)(百度公司开源的高性能RPC框架)，主从redis库访问参考了[redis3m](https://github.com/luca3m/redis3m.git)，同时有它自己的特性。
 
