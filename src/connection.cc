@@ -138,5 +138,18 @@ RedisConnection& RedisConnection::operator=(RedisConnectionImpl* connection) {
     return *this;
 }
 
+RedisConnection::RedisConnection(RedisConnection&& conn) {
+    this->impl_ = conn.mutable_impl();
+    conn.set_impl(NULL);
+}
+
+RedisConnection& RedisConnection::operator=(RedisConnection&& conn) {
+    this->impl_ = conn.mutable_impl();
+    conn.set_impl(NULL);
+    return *this;
+}
+
+
+
 } // namespace cloris
 

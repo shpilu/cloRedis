@@ -40,7 +40,7 @@ public:
 	RedisConnectionImpl(RedisConnectionPool*);
     RedisConnectionImpl& Do(const char *format, ...);
 private:
-	~RedisConnectionImpl(); // forbid allocation in the stack
+	virtual ~RedisConnectionImpl(); // forbid allocation on stack
     bool IsRawConnection();
     RedisConnectionImpl& __Do(const char *format, va_list ap);
     bool Connect(const std::string& host, int port, const std::string& password, struct timeval &timeout, int db); 
@@ -58,15 +58,23 @@ class RedisConnection {
     static RedisConnectionImpl dummy_conn_impl;
 public:
     RedisConnection(RedisConnectionImpl* conn) : impl_(conn) { }
-    ~RedisConnection();
+    virtual ~RedisConnection();
 
     // cast RedisConnection to bool type
     operator bool() const { return impl_ ? true : false; }
     RedisConnection& operator=(RedisConnectionImpl* connection);
     RedisConnectionImpl* operator->();
     RedisConnectionImpl& operator*();
+
+    RedisConnection(RedisConnection&&); 
+    RedisConnection& operator=(RedisConnection&&);
+
+    RedisConnectionImpl* mutable_impl() { return impl_; }
+    void set_impl(RedisConnectionImpl* impl) { impl_ = impl; }
 private:
     RedisConnection() = delete; 
+    RedisConnection(const RedisConnection&) = delete; 
+    RedisConnection& operator=(const RedisConnection&) = delete;
     RedisConnectionImpl* impl_;
 };
 

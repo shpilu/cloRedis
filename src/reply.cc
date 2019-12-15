@@ -12,22 +12,37 @@
 
 namespace cloris {
 
-RedisReply::RedisReply()
-    : reply_(NULL),
-      reclaim_(true) {
+RedisReply::RedisReply() {
     cLog(TRACE, "RedisReply constructor..."); 
-    Update(NULL, true, STATE_ERROR_INVOKE, NULL); 
+    Init(NULL, true, STATE_ERROR_INVOKE, NULL);
+}
+
+RedisReply::RedisReply(RedisReply&& reply) {
+    cLog(TRACE, "RedisReply move constructor..."); 
+    Init(reply.mutable_reply(), reply.reclaim(), reply.err_state(), reply.err_msg());
+}
+
+RedisReply& RedisReply::operator=(RedisReply&& reply) {
+    cLog(TRACE, "RedisReply move assignment..."); 
+    RemoveOldState();
+    Init(reply.mutable_reply(), reply.reclaim(), reply.err_state(), reply.err_msg());
+    return *this;
 }
 
 RedisReply::RedisReply(redisReply* reply, bool reclaim, ERR_STATE state, const char* err_msg) {
     cLog(TRACE, "RedisReply constructor..."); 
-    Update(reply, reclaim, state, err_msg);
+    Init(reply, reclaim, state, err_msg);
 }
 
 RedisReply::~RedisReply() {
     cLog(TRACE, "RedisReply destructor..."); 
-    if (reclaim_ && reply_) {
+    RemoveOldState();
+}
+
+void RedisReply::RemoveOldState() {
+    if (reply_ && reclaim_) {
         freeReplyObject(reply_);
+        reply_ = NULL;
     }
 }
 
@@ -36,19 +51,21 @@ void RedisReply::UpdateErrMsg(const char* err_msg) {
         return;
     }
     size_t len = strlen(err_msg);
-    len = (len < sizeof(err_str_)) ? len : (sizeof(err_str_) - 1);
-    memcpy(err_str_, err_msg, len);
-    err_str_[len + 1] = '\0';
+    len = (len < sizeof(err_msg_)) ? len : (sizeof(err_msg_) - 1);
+    memcpy(err_msg_, err_msg, len);
+    err_msg_[len + 1] = '\0';
 }
 
-void RedisReply::Update(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg) {
-    if (reply_) {
-        freeReplyObject(reply_);
-    }
+void RedisReply::Init(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg) {
     reply_ = rep;
     reclaim_ = reclaim;
     err_state_ = state;
     UpdateErrMsg(err_msg);
+}
+
+void RedisReply::Update(redisReply* rep, bool reclaim, ERR_STATE state, const char* err_msg) {
+    RemoveOldState();
+    Init(rep, reclaim, state, err_msg);
 }
 
 std::string RedisReply::toString() const {
@@ -106,7 +123,7 @@ std::string RedisReply::err_str() const {
             value = reply_->str;
         }
     } else {
-        value = this->err_str_;
+        value = this->err_msg_;
     }
     return value;
 }
@@ -143,14 +160,18 @@ size_t RedisReply::size() const {
     }
 }
 
-RedisReplyPtr RedisReply::operator[](size_t index) {
-    RedisReplyPtr reply;
-    if (!reply_ || (reply_->type != REDIS_REPLY_ARRAY) || (index > reply_->elements)) {
-        cLog(ERROR, "warning, reply type is not array");
+RedisReply RedisReply::get(size_t index) {
+    return (*this)[index];
+}
+
+RedisReply RedisReply::operator[](size_t index) {
+    RedisReply reply;
+    if (!reply_ || (reply_->type != REDIS_REPLY_ARRAY) || (index >= reply_->elements)) {
+        cLog(ERROR, "reply type is not array");
+        return RedisReply();
     } else {
-        reply.reset(new RedisReply(reply_->element[index], false, STATE_OK, ""));
+        return RedisReply(reply_->element[index], false, STATE_OK, "");
     }
-    return reply;
 }
 
 } // namespace cloris
